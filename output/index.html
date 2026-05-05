@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greedy Meow - Editor + Game</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; overflow:hidden; background:#0a0a1a; font-family:'Segoe UI',sans-serif; }
+#toolbar {
+  height:42px; background:linear-gradient(180deg,#1a1a2e,#16213e); display:flex; align-items:center;
+  padding:0 12px; border-bottom:2px solid #e94560; gap:8px; z-index:100;
+}
+#toolbar .title { color:#ffd700; font-size:14px; font-weight:bold; margin-right:16px; letter-spacing:1px; }
+.tab-btn {
+  background:#0f3460; border:1px solid #333; color:#aaa; padding:6px 18px; border-radius:4px 4px 0 0;
+  cursor:pointer; font-size:13px; font-weight:bold; transition:all 0.2s;
+}
+.tab-btn:hover { background:#1a3a5c; color:#ddd; }
+.tab-btn.active { background:#e94560; color:#fff; border-color:#e94560; }
+.sync-btn {
+  background:#2a6e2a; border:1px solid #4a4; color:#fff; padding:6px 14px; border-radius:4px;
+  cursor:pointer; font-size:12px; font-weight:bold; margin-left:auto; transition:all 0.2s;
+}
+.sync-btn:hover { background:#3a8e3a; }
+.sync-btn.flash { background:#ffd700; color:#000; }
+.status { color:#666; font-size:11px; margin-left:8px; }
+#frameWrap { width:100%; height:calc(100% - 42px); position:relative; }
+#frameWrap iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:none; }
+iframe.hidden { display:none; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <span class="title">GREEDY MEOW</span>
+  <button class="tab-btn active" onclick="switchTab('editor')" id="tabEditor">Editor</button>
+  <button class="tab-btn" onclick="switchTab('game')" id="tabGame">Game</button>
+  <button class="sync-btn" onclick="syncToGame()" id="syncBtn">Sync to Game</button>
+  <span class="status" id="statusText">Ready</span>
+</div>
+<div id="frameWrap">
+  <iframe id="editorFrame" src="editor.html"></iframe>
+  <iframe id="gameFrame" src="game.html" class="hidden"></iframe>
+</div>
+
+<script>
+let currentTab = 'editor';
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('editorFrame').classList.toggle('hidden', tab !== 'editor');
+  document.getElementById('gameFrame').classList.toggle('hidden', tab !== 'game');
+  document.getElementById('tabEditor').classList.toggle('active', tab === 'editor');
+  document.getElementById('tabGame').classList.toggle('active', tab === 'game');
+}
+
+function syncToGame() {
+  const btn = document.getElementById('syncBtn');
+  const status = document.getElementById('statusText');
+  btn.classList.add('flash');
+  status.textContent = 'Syncing...';
+  setTimeout(() => btn.classList.remove('flash'), 400);
+
+  try {
+    const editorWin = document.getElementById('editorFrame').contentWindow;
+    const gameWin = document.getElementById('gameFrame').contentWindow;
+
+    const compact = editorWin.exportCompactJSON();
+    if (!compact) { status.textContent = 'Error: editor returned empty data'; return; }
+
+    gameWin.LEVEL_JSON = JSON.parse(compact);
+    gameWin.gameState = 'title';
+    gameWin.frame = 0;
+    gameWin.loadLevelFromJSON();
+    gameWin.generateMap();
+
+    status.textContent = 'Synced! Game tab ready to play.';
+    setTimeout(() => { status.textContent = 'Ready'; }, 3000);
+
+    switchTab('game');
+    console.log('[Launcher] Level synced successfully');
+  } catch (e) {
+    status.textContent = 'Sync failed: ' + e.message;
+    console.error('[Launcher] Sync error:', e);
+  }
+}
+</script>
+</body>
+</html>

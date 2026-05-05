@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>贪吃喵 Level Editor</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', sans-serif; background:#1a1a2e; color:#e0e0e0; display:flex; height:100vh; overflow:hidden; }
+
+/* LEFT PANEL */
+#panel { width:220px; background:#16213e; border-right:1px solid #333; display:flex; flex-direction:column; overflow-y:auto; flex-shrink:0; }
+#panel h2 { font-size:13px; padding:8px 10px 4px; color:#ffd700; border-bottom:1px solid #333; text-transform:uppercase; letter-spacing:1px; }
+.cat-group { padding:4px 6px; }
+.cat-btn { display:flex; align-items:center; gap:6px; padding:5px 8px; margin:2px 0; border:1px solid transparent; border-radius:4px; cursor:pointer; font-size:12px; background:transparent; color:#ccc; width:100%; text-align:left; }
+.cat-btn:hover { background:#1a3a5c; }
+.cat-btn.active { background:#0f3460; border-color:#e94560; color:#fff; }
+.cat-btn .icon { width:20px; height:20px; border-radius:3px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.cat-btn .label { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* TOOLBAR */
+#toolbar { height:36px; background:#0f3460; display:flex; align-items:center; gap:6px; padding:0 10px; border-bottom:1px solid #333; }
+#toolbar button { background:#1a3a5c; border:1px solid #444; color:#ddd; padding:4px 10px; border-radius:3px; cursor:pointer; font-size:12px; }
+#toolbar button:hover { background:#e94560; color:#fff; }
+#toolbar select { background:#1a3a5c; border:1px solid #444; color:#ddd; padding:3px 6px; border-radius:3px; font-size:12px; }
+#toolbar span { font-size:12px; color:#888; margin-left:8px; }
+#zoomLabel { color:#ffd700; font-weight:bold; }
+
+/* MAIN CANVAS AREA */
+#main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+#canvasWrap { flex:1; overflow:hidden; position:relative; cursor:crosshair; }
+#canvasWrap canvas { position:absolute; top:0; left:0; }
+
+/* RIGHT PANEL */
+#props { width:200px; background:#16213e; border-left:1px solid #333; padding:10px; overflow-y:auto; flex-shrink:0; }
+#props h3 { font-size:12px; color:#ffd700; margin-bottom:8px; }
+#props label { font-size:11px; display:block; margin:4px 0 2px; color:#aaa; }
+#props input, #props select { width:100%; background:#0f3460; border:1px solid #444; color:#ddd; padding:3px 6px; border-radius:3px; font-size:12px; margin-bottom:4px; }
+#props button { width:100%; margin-top:6px; }
+#propContent { font-size:12px; }
+
+/* STATUS BAR */
+#status { height:24px; background:#0a0a1a; display:flex; align-items:center; padding:0 10px; font-size:11px; color:#666; border-top:1px solid #222; }
+#status span { margin-right:16px; }
+
+/* MODAL */
+.modal-bg { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center; }
+.modal-bg.show { display:flex; }
+.modal { background:#16213e; border:1px solid #444; border-radius:8px; padding:20px; max-width:600px; width:90%; max-height:80vh; overflow:auto; }
+.modal h3 { color:#ffd700; margin-bottom:10px; }
+.modal textarea { width:100%; height:300px; background:#0a0a1a; color:#0f0; border:1px solid #333; font-family:monospace; font-size:11px; padding:8px; }
+.modal button { margin-top:8px; margin-right:6px; }
+</style>
+</head>
+<body>
+
+<!-- LEFT PALETTE -->
+<div id="panel">
+  <h2>🏗 地形 Foundation</h2>
+  <div class="cat-group" id="grp-foundation"></div>
+  <h2>🍣 食物 Fuel</h2>
+  <div class="cat-group" id="grp-fuel"></div>
+  <h2>⚠️ 敌人 Threats</h2>
+  <div class="cat-group" id="grp-threats"></div>
+  <h2>🎭 互动 Fun</h2>
+  <div class="cat-group" id="grp-fun"></div>
+  <h2>🔧 工具 Tools</h2>
+  <div class="cat-group">
+    <button class="cat-btn" data-tool="eraser"><span class="icon">🧹</span><span class="label">擦除 Eraser</span></button>
+    <button class="cat-btn" data-tool="select"><span class="icon">👆</span><span class="label">选择 Select</span></button>
+    <button class="cat-btn" data-tool="patrol"><span class="icon">🔗</span><span class="label">巡逻路径 Patrol</span></button>
+  </div>
+</div>
+
+<!-- MAIN AREA -->
+<div id="main">
+  <div id="toolbar">
+    <button onclick="zoomIn()">🔍+</button>
+    <button onclick="zoomOut()">🔍-</button>
+    <span id="zoomLabel">×1.0</span>
+    <button onclick="fitView()">适配 Fit</button>
+    <span>|</span>
+    <button onclick="undo()">↩ 撤销</button>
+    <button onclick="clearAll()">🗑 清空</button>
+    <span>|</span>
+    <button onclick="exportJSON()">📤 导出JSON</button>
+    <button onclick="importJSON()">📥 导入JSON</button>
+    <span>|</span>
+    <select id="zoneFilter" onchange="render()">
+      <option value="all">全部 All Zones</option>
+      <option value="1">Zone 1 花园 (60-79)</option>
+      <option value="2">Zone 2 宴会厅 (30-59)</option>
+      <option value="3">Zone 3 舞台 (0-29)</option>
+    </select>
+    <span>|</span>
+    <button onclick="runValidation()" style="background:#2a6e2a;font-weight:bold">✅ 验证 Validate</button>
+    <button onclick="toggleHeatmap()">🗺 热力图</button>
+    <span id="cellInfo"></span>
+  </div>
+  <div id="canvasWrap">
+    <canvas id="grid"></canvas>
+  </div>
+  <div id="status">
+    <span id="statPos">Pos: -</span>
+    <span id="statZone">Zone: -</span>
+    <span id="statEntities">Entities: 0</span>
+    <span id="statTiles">Tiles: 0</span>
+  </div>
+</div>
+
+<!-- RIGHT PROPERTIES -->
+<div id="props">
+  <h3>属性 Properties</h3>
+  <div id="propContent"><p style="color:#666">选择元件查看属性</p></div>
+</div>
+
+<!-- EXPORT/IMPORT MODAL -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">Export</h3>
+    <textarea id="modalText"></textarea>
+    <div>
+      <button onclick="copyModal()">📋 复制</button>
+      <button onclick="loadModal()">📥 加载</button>
+      <button onclick="closeModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== ELEMENT DEFINITIONS =====
+const ELEMENTS = {
+  foundation: [
+    { id:'grass',     name:'草地 Grass',     icon:'🟩', color:'#4a7838', tile:true, tileId:0 },
+    { id:'path',      name:'路径 Path',      icon:'🟫', color:'#9a8060', tile:true, tileId:1 },
+    { id:'wall',      name:'矮墙 Wall',      icon:'🧱', color:'#8B6914', tile:true, tileId:2 },
+    { id:'fence',     name:'栅栏 Fence',     icon:'🔲', color:'#666',    tile:true, tileId:3 },
+    { id:'tree',      name:'树木 Tree',      icon:'🌳', color:'#2d5a1e', tile:true, tileId:4 },
+    { id:'bush',      name:'灌木 Bush',      icon:'🌿', color:'#3a6b2a', tile:true, tileId:5 },
+    { id:'water',     name:'水池 Water',     icon:'💧', color:'#2A7090', tile:true, tileId:6 },
+    { id:'flower',    name:'花坛 Flower',    icon:'🌸', color:'#e88aad', tile:true, tileId:7 },
+    { id:'fountain',  name:'喷泉 Fountain',  icon:'⛲', color:'#4488cc', entity:true, size:3 },
+    { id:'carpet',    name:'地毯 Carpet',    icon:'🟥', color:'#993333', tile:true, tileId:8 },
+    { id:'haystack',  name:'干草垛 Haystack', icon:'🟨', color:'#D4A017', tile:true, tileId:9 },
+    { id:'leaves',    name:'落叶堆 Leaves',  icon:'🍂', color:'#b8860b', entity:true, size:1 },
+    { id:'flagpole',  name:'旗帜柱 Flag',    icon:'🚩', color:'#dd4444', entity:true, size:1 },
+  ],
+  fuel: [
+    { id:'biscuit',   name:'饼干 Biscuit',   icon:'🍪', color:'#daa520', entity:true, energy:5 },
+    { id:'can',       name:'罐头 Can',       icon:'🥫', color:'#cc6633', entity:true, energy:15 },
+    { id:'fish',      name:'整鱼 Fish',      icon:'🐟', color:'#ff8c00', entity:true, energy:30 },
+    { id:'cake',      name:'蛋糕塔 Cake',    icon:'🎂', color:'#ff69b4', entity:true, energy:50, special:'stationary_eat' },
+    { id:'cheese',    name:'奶酪轮 Cheese',  icon:'🧀', color:'#ffd700', entity:true, energy:10, special:'rolling' },
+    { id:'icecream',  name:'冰淇淋 IceCream',icon:'🍦', color:'#87ceeb', entity:true, energy:12, special:'speed_boost' },
+    { id:'grandfish', name:'大鱼 GrandFish', icon:'🐠', color:'#ffd700', entity:true, energy:0, special:'boss_item', size:2 },
+  ],
+  threats: [
+    { id:'chef',      name:'厨师 Chef',      icon:'👨‍🍳', color:'#ff6347', entity:true, enemy:true, speed:1.5, vision:120, visionAngle:1.2 },
+    { id:'grandma',   name:'奶奶 Grandma',   icon:'👵', color:'#8E6BAA', entity:true, enemy:true, speed:1.2, vision:100, visionAngle:1.1 },
+    { id:'waiter',    name:'服务员 Waiter',   icon:'🤵', color:'#ff8c00', entity:true, enemy:true, speed:2.5, vision:80, visionAngle:0.6 },
+    { id:'smalldog',  name:'小狗 SmallDog',  icon:'🐕', color:'#deb887', entity:true, enemy:true, speed:1.2, vision:0, smell:100 },
+    { id:'bigdog',    name:'大狗 BigDog',    icon:'🐕‍🦺', color:'#8b4513', entity:true, enemy:true, speed:2.8, vision:140, visionAngle:1.0, smell:60 },
+    { id:'drone',     name:'无人机 Drone',   icon:'🛸', color:'#00bfff', entity:true, enemy:true, speed:1.8, vision:100, visionAngle:6.28 },
+    { id:'guard',     name:'保安 Guard',     icon:'💤', color:'#808080', entity:true, enemy:true, speed:0, vision:0, smell:0, special:'sleeping' },
+    { id:'doglady',   name:'遛狗大妈 DogLady',icon:'👵', color:'#dda0dd', entity:true, enemy:true, speed:1.0, vision:90, visionAngle:1.4, special:'leash_dog' },
+  ],
+  fun: [
+    { id:'box',       name:'纸箱 Box',       icon:'📦', color:'#8b7355', entity:true, special:'hide' },
+    { id:'fishbone',  name:'鱼骨 Fishbone',  icon:'🦴', color:'#d4c5a0', entity:true, special:'lure' },
+    { id:'banana',    name:'香蕉皮 Banana',  icon:'🍌', color:'#ffe135', entity:true, special:'slip' },
+    { id:'catnip',    name:'猫薄荷 Catnip',  icon:'🌿', color:'#32cd32', entity:true, special:'confuse' },
+    { id:'spring',    name:'弹簧垫 Spring',  icon:'🔴', color:'#ff4444', entity:true, special:'bounce' },
+    { id:'revdoor',   name:'旋转门 RevDoor', icon:'🚪', color:'#a0522d', entity:true, special:'block_enemy' },
+  ],
+};
+
+// ===== STATE =====
+const MAP_W = 50, MAP_H = 80, TILE = 16;
+const ZONE1_START = 60, ZONE2_START = 30, ZONE3_START = 0;
+let tiles = []; // MAP_H rows × MAP_W cols, each = tileId (0=grass default)
+let entities = []; // { id, type, x(tile), y(tile), patrol:[], props:{} }
+let selectedTool = null;
+let selectedEntity = null;
+let zoom = 1.0;
+let panX = 0, panY = 0;
+let isPanning = false, panStartX = 0, panStartY = 0;
+let isDrawing = false;
+let patrolTarget = null; // entity being given patrol points
+let undoStack = [];
+const MAX_UNDO = 50;
+
+// Init tiles
+for (let y = 0; y < MAP_H; y++) {
+  tiles[y] = [];
+  for (let x = 0; x < MAP_W; x++) tiles[y][x] = 0;
+}
+
+// ===== CANVAS SETUP =====
+const canvas = document.getElementById('grid');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('canvasWrap');
+
+function resizeCanvas() {
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  render();
+}
+window.addEventListener('resize', resizeCanvas);
+
+// ===== BUILD PALETTE =====
+function buildPalette() {
+  for (const [cat, items] of Object.entries(ELEMENTS)) {
+    const grp = document.getElementById('grp-' + cat);
+    if (!grp) continue;
+    for (const el of items) {
+      const btn = document.createElement('button');
+      btn.className = 'cat-btn';
+      btn.dataset.tool = el.id;
+      btn.dataset.cat = cat;
+      btn.innerHTML = `<span class="icon">${el.icon}</span><span class="label">${el.name}</span>`;
+      btn.addEventListener('click', () => selectTool(el.id, cat));
+      grp.appendChild(btn);
+    }
+  }
+}
+buildPalette();
+
+// Tool buttons
+document.querySelectorAll('[data-tool="eraser"],[data-tool="select"],[data-tool="patrol"]').forEach(btn => {
+  btn.addEventListener('click', () => selectTool(btn.dataset.tool, '_tools'));
+});
+
+function selectTool(id, cat) {
+  selectedTool = id;
+  patrolTarget = null;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`[data-tool="${id}"]`);
+  if (btn) btn.classList.add('active');
+  if (id === 'patrol') {
+    document.getElementById('propContent').innerHTML = '<p style="color:#ffd700">点击敌人开始画巡逻路径<br>再点地图添加路径点<br>右键结束</p>';
+  } else if (id === 'select') {
+    document.getElementById('propContent').innerHTML = '<p style="color:#666">点击实体查看/编辑属性</p>';
+  }
+  wrap.style.cursor = id === 'select' ? 'pointer' : id === 'patrol' ? 'crosshair' : 'crosshair';
+}
+
+// ===== FIND ELEMENT DEF =====
+function findDef(id) {
+  for (const items of Object.values(ELEMENTS)) {
+    const found = items.find(e => e.id === id);
+    if (found) return found;
+  }
+  return null;
+}
+
+// ===== UNDO =====
+function saveUndo() {
+  undoStack.push({ tiles: tiles.map(r => [...r]), entities: JSON.parse(JSON.stringify(entities)) });
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+function undo() {
+  if (undoStack.length === 0) return;
+  const s = undoStack.pop();
+  tiles = s.tiles;
+  entities = s.entities;
+  render();
+}
+
+// ===== MOUSE → TILE COORD =====
+function mouseToTile(e) {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left - panX) / zoom;
+  const my = (e.clientY - rect.top - panY) / zoom;
+  return { tx: Math.floor(mx / TILE), ty: Math.floor(my / TILE), mx, my };
+}
+
+// ===== ENTITY AT TILE =====
+function entityAt(tx, ty) {
+  for (let i = entities.length - 1; i >= 0; i--) {
+    const en = entities[i];
+    const def = findDef(en.type);
+    const sz = (def && def.size) || 1;
+    if (tx >= en.x && tx < en.x + sz && ty >= en.y && ty < en.y + sz) return en;
+  }
+  return null;
+}
+
+// ===== CANVAS EVENTS =====
+canvas.addEventListener('mousedown', (e) => {
+  if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    isPanning = true;
+    panStartX = e.clientX - panX;
+    panStartY = e.clientY - panY;
+    wrap.style.cursor = 'grabbing';
+    return;
+  }
+  if (e.button === 2) {
+    // Right click: end patrol
+    if (patrolTarget) { patrolTarget = null; render(); }
+    return;
+  }
+  const { tx, ty } = mouseToTile(e);
+  if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) return;
+
+  if (selectedTool === 'patrol') {
+    if (!patrolTarget) {
+      const en = entityAt(tx, ty);
+      if (en && findDef(en.type)?.enemy) {
+        patrolTarget = en;
+        if (!en.patrol) en.patrol = [];
+        showProps(en);
+      }
+    } else {
+      saveUndo();
+      patrolTarget.patrol.push({ x: tx, y: ty });
+      showProps(patrolTarget);
+    }
+    render();
+    return;
+  }
+
+  if (selectedTool === 'select') {
+    const en = entityAt(tx, ty);
+    selectedEntity = en;
+    if (en) showProps(en);
+    else document.getElementById('propContent').innerHTML = `<p style="color:#666">Tile (${tx},${ty}) = ${tiles[ty][tx]}</p>`;
+    render();
+    return;
+  }
+
+  if (selectedTool === 'eraser') {
+    saveUndo();
+    isDrawing = true;
+    // Remove entity first, then set tile to grass
+    const en = entityAt(tx, ty);
+    if (en) {
+      entities = entities.filter(e => e !== en);
+      if (selectedEntity === en) selectedEntity = null;
+    } else {
+      tiles[ty][tx] = 0;
+    }
+    render();
+    return;
+  }
+
+  const def = findDef(selectedTool);
+  if (!def) return;
+
+  saveUndo();
+  if (def.tile) {
+    isDrawing = true;
+    tiles[ty][tx] = def.tileId;
+  } else if (def.entity) {
+    // Check if entity already there
+    const existing = entityAt(tx, ty);
+    if (!existing) {
+      const en = { id: Date.now(), type: def.id, x: tx, y: ty };
+      if (def.enemy) { en.patrol = []; en.dir = 0; }
+      entities.push(en);
+      selectedEntity = en;
+      showProps(en);
+    }
+  }
+  render();
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (isPanning) {
+    panX = e.clientX - panStartX;
+    panY = e.clientY - panStartY;
+    render();
+    return;
+  }
+  const { tx, ty } = mouseToTile(e);
+  // Status bar
+  const zone = ty < ZONE2_START ? 3 : ty < ZONE1_START ? 2 : 1;
+  document.getElementById('statPos').textContent = `Pos: ${tx},${ty}`;
+  document.getElementById('statZone').textContent = `Zone: ${zone}`;
+
+  if (isDrawing && tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
+    const def = findDef(selectedTool);
+    if (def && def.tile) {
+      tiles[ty][tx] = def.tileId;
+      render();
+    } else if (selectedTool === 'eraser') {
+      const en = entityAt(tx, ty);
+      if (en) entities = entities.filter(e => e !== en);
+      else tiles[ty][tx] = 0;
+      render();
+    }
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  isPanning = false; isDrawing = false;
+  wrap.style.cursor = selectedTool === 'select' ? 'pointer' : 'crosshair';
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const oldZoom = zoom;
+  zoom *= e.deltaY < 0 ? 1.15 : 0.87;
+  zoom = Math.max(0.2, Math.min(5, zoom));
+  // Zoom toward mouse
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  panX = mx - (mx - panX) * (zoom / oldZoom);
+  panY = my - (my - panY) * (zoom / oldZoom);
+  document.getElementById('zoomLabel').textContent = `×${zoom.toFixed(1)}`;
+  render();
+}, { passive: false });
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// ===== RENDER =====
+const TILE_COLORS = {
+  0: '#4a7838', 1: '#9a8060', 2: '#8B6914', 3: '#666666',
+  4: '#2d5a1e', 5: '#3a6b2a', 7: '#e88aad', 8: '#993333',
+};
+const ZONE_COLORS = ['rgba(100,200,100,0.08)', 'rgba(200,180,100,0.08)', 'rgba(180,100,200,0.08)'];
+
+function render() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(panX, panY);
+  ctx.scale(zoom, zoom);
+
+  const zoneFilter = document.getElementById('zoneFilter').value;
+
+  // Draw tiles
+  for (let y = 0; y < MAP_H; y++) {
+    if (zoneFilter !== 'all') {
+      const z = y < ZONE2_START ? '3' : y < ZONE1_START ? '2' : '1';
+      if (z !== zoneFilter) continue;
+    }
+    for (let x = 0; x < MAP_W; x++) {
+      const t = tiles[y][x];
+      ctx.fillStyle = TILE_COLORS[t] || '#4a7838';
+      ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+      // Grid lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.strokeRect(x * TILE, y * TILE, TILE, TILE);
+    }
+  }
+
+  // Zone dividers
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 2 / zoom;
+  ctx.setLineDash([6 / zoom, 4 / zoom]);
+  [ZONE1_START, ZONE2_START].forEach(row => {
+    ctx.beginPath();
+    ctx.moveTo(0, row * TILE);
+    ctx.lineTo(MAP_W * TILE, row * TILE);
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  // Zone labels
+  ctx.fillStyle = 'rgba(255,215,0,0.5)';
+  ctx.font = `bold ${14/zoom}px sans-serif`;
+  ctx.fillText('Zone 3 舞台 Stage (0-29)', 4, ZONE3_START * TILE + 14/zoom);
+  ctx.fillText('Zone 2 宴会厅 Banquet (30-59)', 4, ZONE2_START * TILE + 14/zoom);
+  ctx.fillText('Zone 1 花园 Garden (60-79)', 4, ZONE1_START * TILE + 14/zoom);
+
+  // Gate indicators
+  ctx.fillStyle = 'rgba(255,100,100,0.3)';
+  for (let gx = 22; gx <= 27; gx++) {
+    ctx.fillRect(gx * TILE, ZONE1_START * TILE - TILE/2, TILE, TILE);
+    ctx.fillRect(gx * TILE, ZONE2_START * TILE - TILE/2, TILE, TILE);
+  }
+
+  // Corridor highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 22; x <= 27; x++) {
+      ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+    }
+  }
+
+  // Draw entities
+  for (const en of entities) {
+    if (zoneFilter !== 'all') {
+      const z = en.y < ZONE2_START ? '3' : en.y < ZONE1_START ? '2' : '1';
+      if (z !== zoneFilter) continue;
+    }
+    const def = findDef(en.type);
+    if (!def) continue;
+    const sz = (def.size || 1) * TILE;
+    const cx = en.x * TILE + sz / 2;
+    const cy = en.y * TILE + sz / 2;
+
+    // Entity background
+    ctx.fillStyle = def.color + '88';
+    ctx.fillRect(en.x * TILE, en.y * TILE, sz, sz);
+    ctx.strokeStyle = en === selectedEntity ? '#fff' : def.color;
+    ctx.lineWidth = en === selectedEntity ? 2/zoom : 1/zoom;
+    ctx.strokeRect(en.x * TILE, en.y * TILE, sz, sz);
+
+    // Icon
+    ctx.font = `${Math.min(sz * 0.7, 14)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(def.icon, cx, cy);
+
+    // Enemy vision cone preview
+    if (def.enemy && def.vision > 0) {
+      const dir = en.dir || 0;
+      const va = def.visionAngle || 1.2;
+      const vr = (def.vision || 100) * TILE / 40; // scale to editor
+      ctx.fillStyle = 'rgba(255,80,80,0.1)';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, vr, dir - va/2, dir + va/2);
+      ctx.closePath();
+      ctx.fill();
+    }
+    // Smell radius
+    if (def.smell) {
+      const sr = def.smell * TILE / 40;
+      ctx.strokeStyle = 'rgba(255,200,50,0.2)';
+      ctx.lineWidth = 1/zoom;
+      ctx.setLineDash([3/zoom, 3/zoom]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, sr, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Patrol path
+    if (en.patrol && en.patrol.length > 0) {
+      ctx.strokeStyle = '#ff4444';
+      ctx.lineWidth = 1.5/zoom;
+      ctx.setLineDash([4/zoom, 2/zoom]);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      for (const p of en.patrol) {
+        ctx.lineTo(p.x * TILE + TILE/2, p.y * TILE + TILE/2);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Patrol dots
+      ctx.fillStyle = '#ff4444';
+      for (let i = 0; i < en.patrol.length; i++) {
+        const p = en.patrol[i];
+        ctx.beginPath();
+        ctx.arc(p.x * TILE + TILE/2, p.y * TILE + TILE/2, 3/zoom, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = `${9/zoom}px sans-serif`;
+        ctx.fillText(i+1, p.x * TILE + TILE/2, p.y * TILE + TILE/2 - 5/zoom);
+        ctx.fillStyle = '#ff4444';
+      }
+    }
+  }
+
+  // Patrol target highlight
+  if (patrolTarget) {
+    const def = findDef(patrolTarget.type);
+    const sz = ((def && def.size) || 1) * TILE;
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 2/zoom;
+    ctx.setLineDash([4/zoom, 2/zoom]);
+    ctx.strokeRect(patrolTarget.x * TILE - 2/zoom, patrolTarget.y * TILE - 2/zoom, sz + 4/zoom, sz + 4/zoom);
+    ctx.setLineDash([]);
+  }
+
+  // Heatmap overlay (BFS reachability / enemy coverage)
+  if (heatmapData && showHeatmap) {
+    for (let y = 0; y < MAP_H; y++) {
+      for (let x = 0; x < MAP_W; x++) {
+        const v = heatmapData[y]?.[x];
+        if (v === undefined) continue;
+        if (v === -1) {
+          // Unreachable
+          ctx.fillStyle = 'rgba(255,0,0,0.35)';
+          ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+        } else if (v > 0) {
+          // Enemy coverage intensity
+          const a = Math.min(0.5, v * 0.12);
+          ctx.fillStyle = `rgba(255,${Math.max(0,200-v*40)},0,${a})`;
+          ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+        }
+      }
+    }
+    // Mark validation issues
+    for (const issue of validationIssues) {
+      if (issue.x !== undefined && issue.y !== undefined) {
+        ctx.strokeStyle = issue.type === 'error' ? '#ff0000' : '#ffaa00';
+        ctx.lineWidth = 2/zoom;
+        ctx.strokeRect(issue.x * TILE + 1, issue.y * TILE + 1, TILE - 2, TILE - 2);
+        ctx.fillStyle = issue.type === 'error' ? '#ff0000' : '#ffaa00';
+        ctx.font = `bold ${10/zoom}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText('!', issue.x * TILE + TILE/2, issue.y * TILE + TILE/2 + 3/zoom);
+      }
+    }
+  }
+
+  ctx.restore();
+
+  // Update status
+  document.getElementById('statEntities').textContent = `Entities: ${entities.length}`;
+  let tileCnt = 0;
+  for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) if (tiles[y][x] !== 0) tileCnt++;
+  document.getElementById('statTiles').textContent = `Tiles: ${tileCnt}`;
+}
+
+// ===== PROPERTIES PANEL =====
+function showProps(en) {
+  const def = findDef(en.type);
+  if (!def) return;
+  let html = `<p><b>${def.icon} ${def.name}</b></p>`;
+  html += `<label>位置 X</label><input type="number" value="${en.x}" min="0" max="${MAP_W-1}" onchange="updateProp(${en.id},'x',+this.value)">`;
+  html += `<label>位置 Y</label><input type="number" value="${en.y}" min="0" max="${MAP_H-1}" onchange="updateProp(${en.id},'y',+this.value)">`;
+  if (def.enemy) {
+    html += `<label>朝向 Dir (rad)</label><input type="number" step="0.1" value="${en.dir||0}" onchange="updateProp(${en.id},'dir',+this.value)">`;
+    html += `<p style="margin-top:6px;color:#aaa">巡逻点: ${en.patrol ? en.patrol.length : 0}</p>`;
+    if (en.patrol && en.patrol.length > 0) {
+      html += `<button class="cat-btn" onclick="clearPatrol(${en.id})">🗑 清除巡逻路径</button>`;
+    }
+  }
+  if (def.energy) html += `<p style="color:#ffd700">能量: +${def.energy}</p>`;
+  if (def.special) html += `<p style="color:#e94560">特殊: ${def.special}</p>`;
+  html += `<button class="cat-btn" style="color:#e94560;margin-top:10px" onclick="deleteEntity(${en.id})">🗑 删除</button>`;
+  document.getElementById('propContent').innerHTML = html;
+}
+
+function updateProp(id, key, val) {
+  const en = entities.find(e => e.id === id);
+  if (en) { saveUndo(); en[key] = val; render(); }
+}
+function clearPatrol(id) {
+  const en = entities.find(e => e.id === id);
+  if (en) { saveUndo(); en.patrol = []; showProps(en); render(); }
+}
+function deleteEntity(id) {
+  saveUndo();
+  entities = entities.filter(e => e.id !== id);
+  if (selectedEntity && selectedEntity.id === id) selectedEntity = null;
+  document.getElementById('propContent').innerHTML = '<p style="color:#666">已删除</p>';
+  render();
+}
+
+// ===== ZOOM CONTROLS =====
+function zoomIn() { zoom = Math.min(5, zoom * 1.3); document.getElementById('zoomLabel').textContent = `×${zoom.toFixed(1)}`; render(); }
+function zoomOut() { zoom = Math.max(0.2, zoom * 0.77); document.getElementById('zoomLabel').textContent = `×${zoom.toFixed(1)}`; render(); }
+function fitView() {
+  const W = canvas.width, H = canvas.height;
+  const mapPxW = MAP_W * TILE, mapPxH = MAP_H * TILE;
+  zoom = Math.min(W / mapPxW, H / mapPxH) * 0.95;
+  panX = (W - mapPxW * zoom) / 2;
+  panY = (H - mapPxH * zoom) / 2;
+  document.getElementById('zoomLabel').textContent = `×${zoom.toFixed(1)}`;
+  render();
+}
+
+function clearAll() {
+  if (!confirm('清空所有内容？')) return;
+  saveUndo();
+  for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) tiles[y][x] = 0;
+  entities = [];
+  selectedEntity = null;
+  render();
+}
+
+// ===== EXPORT / IMPORT =====
+function exportJSON() {
+  const data = { version: 1, mapW: MAP_W, mapH: MAP_H, tiles, entities };
+  document.getElementById('modalTitle').textContent = '📤 导出 Export JSON';
+  document.getElementById('modalText').value = JSON.stringify(data, null, 2);
+  document.getElementById('modalBg').classList.add('show');
+}
+function importJSON() {
+  document.getElementById('modalTitle').textContent = '📥 导入 Import JSON';
+  document.getElementById('modalText').value = '';
+  document.getElementById('modalBg').classList.add('show');
+}
+function copyModal() {
+  document.getElementById('modalText').select();
+  document.execCommand('copy');
+}
+function loadModal() {
+  try {
+    const data = JSON.parse(document.getElementById('modalText').value);
+    if (data.tiles && data.entities) {
+      saveUndo();
+      tiles = data.tiles;
+      entities = data.entities;
+      closeModal();
+      render();
+    }
+  } catch(e) { alert('JSON解析错误: ' + e.message); }
+}
+function closeModal() { document.getElementById('modalBg').classList.remove('show'); }
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+  if (e.key === 'Escape') { patrolTarget = null; selectedEntity = null; render(); }
+  if (e.key === 'e') selectTool('eraser', '_tools');
+  if (e.key === 's') selectTool('select', '_tools');
+  if (e.key === 'p') selectTool('patrol', '_tools');
+  if (e.key === 'f') fitView();
+});
+
+// ===== COMPACT EXPORT (for game engine) =====
+function exportCompactJSON() {
+  // Sparse row format: only rows with non-zero tiles
+  const r = {};
+  for (let y = 0; y < MAP_H; y++) {
+    const row = tiles[y];
+    if (row && row.some(t => t !== 0)) r[y] = [...row];
+  }
+  // Entity list: {t, x, y, p?}
+  const elist = entities.map(ent => {
+    const obj = { t: ent.type, x: ent.x, y: ent.y };
+    if (ent.patrol && ent.patrol.length > 0) {
+      obj.p = ent.patrol.map(p => [p.x, p.y]);
+    }
+    return obj;
+  });
+  return JSON.stringify({ r, e: elist });
+}
+
+// ===== CROSS-FRAME COMMUNICATION =====
+// When embedded in launcher, post level data to parent on export
+window.addEventListener('message', function(evt) {
+  if (evt.data && evt.data.type === 'REQUEST_LEVEL') {
+    const compact = exportCompactJSON();
+    window.parent.postMessage({ type: 'LEVEL_DATA', json: compact }, '*');
+  }
+  if (evt.data && evt.data.type === 'LOAD_LEVEL') {
+    try {
+      const data = JSON.parse(evt.data.json);
+      if (data.tiles && data.entities) {
+        saveUndo();
+        tiles = data.tiles;
+        entities = data.entities;
+        render();
+      }
+    } catch(e) {}
+  }
+});
+
+// ===== VALIDATION ENGINE =====
+let heatmapData = null;
+let showHeatmap = false;
+let validationIssues = [];
+
+const BLOCKED_TILES = new Set([2, 3]); // wall, fence block movement
+const PLAYER_WALKABLE = new Set([0, 1, 4, 5, 7, 8]); // grass, path, tree(climbable), bush, flower, carpet
+
+function isWalkable(tx, ty) {
+  if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) return false;
+  return PLAYER_WALKABLE.has(tiles[ty][tx]);
+}
+
+// BFS from a start point, returns reachability map
+function bfs(startX, startY) {
+  const visited = [];
+  for (let y = 0; y < MAP_H; y++) { visited[y] = []; for (let x = 0; x < MAP_W; x++) visited[y][x] = false; }
+  if (!isWalkable(startX, startY)) return visited;
+  const queue = [[startX, startY]];
+  visited[startY][startX] = true;
+  while (queue.length > 0) {
+    const [cx, cy] = queue.shift();
+    for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+      const nx = cx+dx, ny = cy+dy;
+      if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H && !visited[ny][nx] && isWalkable(nx, ny)) {
+        visited[ny][nx] = true;
+        queue.push([nx, ny]);
+      }
+    }
+  }
+  return visited;
+}
+
+function runValidation() {
+  validationIssues = [];
+  heatmapData = [];
+  for (let y = 0; y < MAP_H; y++) { heatmapData[y] = []; for (let x = 0; x < MAP_W; x++) heatmapData[y][x] = 0; }
+
+  const results = { errors: [], warnings: [], info: [] };
+
+  // 1. Zone-specific checks
+  const zones = [
+    { name: 'Zone 1 花园', startY: 60, endY: 79 },
+    { name: 'Zone 2 宴会厅', startY: 30, endY: 59 },
+    { name: 'Zone 3 舞台', startY: 0, endY: 29 },
+  ];
+
+  // 2. Find spawn point (bottom of zone 1) and check reachability to gate
+  // Player spawns near bottom center
+  const spawnX = 24, spawnY = 78;
+  const gate1Y = 60; // Gate 1 row
+  const gate2Y = 30; // Gate 2 row
+
+  // BFS from spawn
+  const reachable = bfs(spawnX, spawnY);
+
+  // Check if spawn is walkable
+  if (!isWalkable(spawnX, spawnY)) {
+    results.errors.push({ msg: `出生点(${spawnX},${spawnY})被阻挡！`, x: spawnX, y: spawnY, type: 'error' });
+  }
+
+  // Check gate 1 reachability
+  let gate1Reachable = false;
+  for (let gx = 22; gx <= 27; gx++) {
+    if (reachable[gate1Y]?.[gx]) { gate1Reachable = true; break; }
+  }
+  if (!gate1Reachable) {
+    results.errors.push({ msg: `Gate 1 (row ${gate1Y}) 从出生点不可达！检查路径是否被墙/栅栏封死`, type: 'error' });
+  }
+
+  // Check gate 2 reachability (from gate 1 area)
+  const reachFromGate = bfs(24, gate1Y - 1);
+  let gate2Reachable = false;
+  for (let gx = 22; gx <= 27; gx++) {
+    if (reachFromGate[gate2Y]?.[gx]) { gate2Reachable = true; break; }
+  }
+  if (!gate2Reachable) {
+    results.errors.push({ msg: `Gate 2 (row ${gate2Y}) 从 Gate 1 不可达！Zone 2 可能路径封死`, type: 'error' });
+  }
+
+  // Mark unreachable walkable tiles in Zone 1
+  for (let y = 60; y < 80; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      if (isWalkable(x, y) && !reachable[y][x]) {
+        heatmapData[y][x] = -1;
+        validationIssues.push({ x, y, type: 'warning' });
+      }
+    }
+  }
+  // Count unreachable in Zone 1
+  let unreachZ1 = 0;
+  for (let y = 60; y < 80; y++) for (let x = 0; x < MAP_W; x++) if (isWalkable(x,y) && !reachable[y][x]) unreachZ1++;
+  if (unreachZ1 > 0) results.warnings.push({ msg: `Zone 1 有 ${unreachZ1} 个可行走格子从出生点不可达（红色标记）`, type: 'warning' });
+
+  // 3. Entity placement checks
+  for (const en of entities) {
+    const def = findDef(en.type);
+    if (!def) continue;
+    // Check if entity is on blocked tile (entities should be on walkable tiles generally)
+    if (def.entity && !def.enemy && !isWalkable(en.x, en.y)) {
+      if (tiles[en.y]?.[en.x] === 2 || tiles[en.y]?.[en.x] === 3) {
+        results.warnings.push({ msg: `${def.icon} ${def.name} 在(${en.x},${en.y})放在墙/栅栏上，玩家无法到达`, x: en.x, y: en.y, type: 'warning' });
+      }
+    }
+    // Check if food/item is reachable from spawn
+    if (def.energy && def.energy > 0) {
+      if (en.y >= 60 && !reachable[en.y]?.[en.x]) {
+        results.warnings.push({ msg: `${def.icon} ${def.name} 在(${en.x},${en.y})从出生点不可达`, x: en.x, y: en.y, type: 'warning' });
+      }
+    }
+    // Check patrol points on blocked tiles
+    if (en.patrol) {
+      for (let i = 0; i < en.patrol.length; i++) {
+        const p = en.patrol[i];
+        if (!isWalkable(p.x, p.y)) {
+          results.errors.push({ msg: `${def.icon} 巡逻点${i+1}(${p.x},${p.y})在不可行走格子上`, x: p.x, y: p.y, type: 'error' });
+        }
+      }
+    }
+  }
+
+  // 4. Enemy coverage analysis (per zone)
+  for (const en of entities) {
+    const def = findDef(en.type);
+    if (!def || !def.enemy) continue;
+    const vr = Math.ceil((def.vision || 0) / 4); // approximate tile radius
+    const sr = Math.ceil((def.smell || 0) / 4);
+    const range = Math.max(vr, sr, 3);
+    for (let dy = -range; dy <= range; dy++) {
+      for (let dx = -range; dx <= range; dx++) {
+        const tx = en.x + dx, ty = en.y + dy;
+        if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
+          const d = Math.sqrt(dx*dx+dy*dy);
+          if (d <= range) heatmapData[ty][tx] = (heatmapData[ty][tx] || 0) + 1;
+        }
+      }
+    }
+  }
+
+  // 5. Food energy totals per zone
+  for (const zone of zones) {
+    let totalEnergy = 0, foodCount = 0, hideCount = 0, enemyCount = 0;
+    for (const en of entities) {
+      if (en.y < zone.startY || en.y > zone.endY) continue;
+      const def = findDef(en.type);
+      if (!def) continue;
+      if (def.energy) { totalEnergy += def.energy; foodCount++; }
+      if (en.type === 'box') hideCount++;
+      if (def.enemy) enemyCount++;
+    }
+    results.info.push({ msg: `${zone.name}: 食物${foodCount}个(总能量${totalEnergy}) | 敌人${enemyCount}个 | 躲藏箱${hideCount}个`, type: 'info' });
+    // Warn if zone has enemies but no hide spots
+    if (enemyCount > 0 && hideCount === 0) {
+      results.warnings.push({ msg: `${zone.name} 有${enemyCount}个敌人但没有躲藏箱！`, type: 'warning' });
+    }
+    // Warn if Zone 1 energy < 40 (gate 1 cost)
+    if (zone.name.includes('Zone 1') && totalEnergy < 40 && foodCount > 0) {
+      results.warnings.push({ msg: `Zone 1 总能量${totalEnergy} < Gate需求40，玩家可能无法开门`, type: 'warning' });
+    }
+  }
+
+  // 6. Check for empty zones
+  for (const zone of zones) {
+    let hasTiles = false;
+    for (let y = zone.startY; y <= zone.endY && !hasTiles; y++)
+      for (let x = 0; x < MAP_W && !hasTiles; x++)
+        if (tiles[y][x] !== 0) hasTiles = true;
+    let hasEntities = entities.some(e => e.y >= zone.startY && e.y <= zone.endY);
+    if (!hasTiles && !hasEntities) {
+      results.info.push({ msg: `${zone.name} 为空（待设计）`, type: 'info' });
+    }
+  }
+
+  // Flatten issues for rendering
+  validationIssues = [...results.errors, ...results.warnings];
+
+  // Display results
+  let html = '<h3 style="color:#ffd700;margin-bottom:8px">验证结果</h3>';
+  if (results.errors.length === 0 && results.warnings.length === 0) {
+    html += '<p style="color:#4CAF50;font-weight:bold">✅ 全部通过！</p>';
+  }
+  for (const e of results.errors) {
+    html += `<p style="color:#ff4444;font-size:11px;margin:3px 0">❌ ${e.msg}</p>`;
+  }
+  for (const w of results.warnings) {
+    html += `<p style="color:#ffaa00;font-size:11px;margin:3px 0">⚠️ ${w.msg}</p>`;
+  }
+  for (const i of results.info) {
+    html += `<p style="color:#88aacc;font-size:11px;margin:3px 0">ℹ️ ${i.msg}</p>`;
+  }
+
+  // Summary stats
+  html += '<hr style="border-color:#333;margin:8px 0">';
+  html += `<p style="font-size:11px;color:#aaa">实体总数: ${entities.length}</p>`;
+  html += `<p style="font-size:11px;color:#aaa">错误: ${results.errors.length} | 警告: ${results.warnings.length}</p>`;
+  html += '<p style="font-size:10px;color:#666;margin-top:6px">红色=不可达区域 橙色=敌人覆盖密度</p>';
+
+  document.getElementById('propContent').innerHTML = html;
+  showHeatmap = true;
+  render();
+}
+
+function toggleHeatmap() {
+  showHeatmap = !showHeatmap;
+  render();
+}
+
+// ===== INIT =====
+setTimeout(() => { resizeCanvas(); fitView(); }, 50);
+</script>
+</body>
+</html>
