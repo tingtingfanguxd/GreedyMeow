@@ -1,0 +1,155 @@
+{
+  "_comment": "Audio event mapping for Unity AudioManager. Original uses Web Audio synthesizer; Unity should use AudioClip references.",
+  "events": [
+    {
+      "id": "alert",
+      "trigger": "enemy_spots_player",
+      "type": "synth_warning",
+      "priority": "high"
+    },
+    {
+      "id": "chase_start",
+      "trigger": "enemy_enters_chase",
+      "type": "escalating_tone",
+      "priority": "high"
+    },
+    {
+      "id": "combo_eat",
+      "trigger": "food_eaten_in_combo",
+      "type": "pitch_scaled_by_combo",
+      "pitchFormula": "1.0 + combo * 0.05",
+      "priority": "medium"
+    },
+    {
+      "id": "heartbeat",
+      "trigger": "enemy_within_150px",
+      "type": "proximity_rhythm",
+      "frequencyFormula": "inversePropToDistance",
+      "priority": "high"
+    },
+    {
+      "id": "gate_unlock",
+      "trigger": "gate_opened",
+      "type": "celebration_chime",
+      "priority": "high"
+    },
+    {
+      "id": "victory",
+      "trigger": "gameState_victory",
+      "type": "triumphant_fanfare",
+      "priority": "critical"
+    },
+    {
+      "id": "death",
+      "trigger": "player_caught_lethal",
+      "type": "descending_tone",
+      "priority": "critical"
+    },
+    {
+      "id": "gameover",
+      "trigger": "lives_zero",
+      "type": "eerie_descend",
+      "priority": "critical"
+    },
+    {
+      "id": "spring_bounce",
+      "trigger": "spring_activated",
+      "type": "boing_sfx",
+      "priority": "medium"
+    },
+    {
+      "id": "revolving_door_bonk",
+      "trigger": "enemy_hits_door",
+      "type": "bonk_impact",
+      "priority": "medium"
+    },
+    {
+      "id": "banana_slip",
+      "trigger": "enemy_steps_banana",
+      "type": "slip_sfx",
+      "priority": "medium"
+    },
+    {
+      "id": "fishbone_throw",
+      "trigger": "fishbone_hits_enemy",
+      "type": "hit_sfx",
+      "priority": "medium"
+    },
+    {
+      "id": "dash",
+      "trigger": "player_dashes",
+      "type": "whoosh_sfx",
+      "priority": "low"
+    },
+    {
+      "id": "sneak_toggle",
+      "trigger": "sneak_mode_change",
+      "type": "soft_click",
+      "priority": "low"
+    },
+    {
+      "id": "can_opener_steal",
+      "trigger": "stole_can_opener",
+      "type": "key_jingle",
+      "priority": "high"
+    },
+    {
+      "id": "grand_fish_grab",
+      "trigger": "grabbed_grand_fish",
+      "type": "dramatic_sting",
+      "priority": "critical"
+    },
+    {
+      "id": "combo_milestone_10",
+      "trigger": "combo_reaches_10",
+      "type": "fanfare_short",
+      "priority": "medium"
+    },
+    {
+      "id": "combo_milestone_20",
+      "trigger": "combo_reaches_20",
+      "type": "fanfare_medium",
+      "priority": "medium"
+    },
+    {
+      "id": "combo_milestone_30",
+      "trigger": "combo_reaches_30",
+      "type": "fanfare_epic",
+      "priority": "high"
+    },
+    {
+      "id": "near_miss",
+      "trigger": "dash_dodge_close_enemy",
+      "type": "woosh_reward",
+      "priority": "low"
+    }
+  ],
+  "musicTracks": [
+    {
+      "id": "title_bgm",
+      "state": "title",
+      "loop": true
+    },
+    {
+      "id": "gameplay_bgm",
+      "state": "playing",
+      "loop": true
+    },
+    {
+      "id": "finalchase_bgm",
+      "state": "finalchase",
+      "loop": true,
+      "intensity": "escalating"
+    },
+    {
+      "id": "victory_bgm",
+      "state": "victory",
+      "loop": false
+    },
+    {
+      "id": "gameover_bgm",
+      "state": "gameover",
+      "loop": false
+    }
+  ]
+}

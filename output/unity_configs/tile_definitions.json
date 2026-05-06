@@ -1,0 +1,95 @@
+{
+  "_comment": "Tile type definitions for Unity Tilemap. Import as ScriptableObject array.",
+  "tiles": [
+    {
+      "id": 0,
+      "name_zh": "草地",
+      "name_en": "Grass",
+      "walkablePlayer": true,
+      "walkableEnemy": true,
+      "blocksVision": false,
+      "special": null
+    },
+    {
+      "id": 1,
+      "name_zh": "小路",
+      "name_en": "Path",
+      "walkablePlayer": true,
+      "walkableEnemy": true,
+      "blocksVision": false,
+      "special": null
+    },
+    {
+      "id": 2,
+      "name_zh": "桌子",
+      "name_en": "Table",
+      "walkablePlayer": false,
+      "walkableEnemy": false,
+      "blocksVision": true,
+      "special": "obstacle_3x2"
+    },
+    {
+      "id": 3,
+      "name_zh": "栏杆",
+      "name_en": "Fence",
+      "walkablePlayer": false,
+      "walkableEnemy": false,
+      "blocksVision": true,
+      "special": "border_gate"
+    },
+    {
+      "id": 4,
+      "name_zh": "树",
+      "name_en": "Tree",
+      "walkablePlayer": true,
+      "walkableEnemy": false,
+      "blocksVision": true,
+      "special": "climbable_E_key"
+    },
+    {
+      "id": 5,
+      "name_zh": "灌木",
+      "name_en": "Bush",
+      "walkablePlayer": true,
+      "walkableEnemy": true,
+      "blocksVision": true,
+      "special": "full_stealth_cover"
+    },
+    {
+      "id": 6,
+      "name_zh": "水",
+      "name_en": "Water",
+      "walkablePlayer": false,
+      "walkableEnemy": false,
+      "blocksVision": false,
+      "special": "animated_waves"
+    },
+    {
+      "id": 7,
+      "name_zh": "花",
+      "name_en": "Flower",
+      "walkablePlayer": true,
+      "walkableEnemy": true,
+      "blocksVision": false,
+      "special": "decorative"
+    },
+    {
+      "id": 8,
+      "name_zh": "地毯",
+      "name_en": "Carpet",
+      "walkablePlayer": true,
+      "walkableEnemy": true,
+      "blocksVision": false,
+      "special": "stage_floor"
+    },
+    {
+      "id": 9,
+      "name_zh": "干草堆",
+      "name_en": "Haystack",
+      "walkablePlayer": false,
+      "walkableEnemy": false,
+      "blocksVision": true,
+      "special": "los_blocker"
+    }
+  ]
+}

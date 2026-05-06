@@ -1,0 +1,84 @@
+{
+  "_comment": "Global game configuration constants for Unity GameManager",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "map": {
+    "tileSize": 40,
+    "width": 50,
+    "height": 80,
+    "worldWidth": 2000,
+    "worldHeight": 3200
+  },
+  "camera": {
+    "viewZoom": 4.5,
+    "viewAngleY": 0.65,
+    "lerpNormal": 0.08,
+    "lerpFinalChase": 0.14,
+    "lerpDash": 0.18
+  },
+  "fps": {
+    "desktop": 60,
+    "mobile": 30
+  },
+  "player": {
+    "baseSpeed": 4.2,
+    "sneakSpeed": 2,
+    "dashSpeed": 11,
+    "chaseCarrySpeed": 4,
+    "dashDuration": 14,
+    "dashCooldown": 50,
+    "dashCooldownFinalChase": 40,
+    "eatRadius": 30,
+    "soundRippleRadius": 100,
+    "sneakRippleRadius": 40,
+    "hideEnterTime": 20,
+    "autoHideDelay": 40,
+    "autoHideDelayMobile": 70
+  },
+  "energy": {
+    "max": 200,
+    "gate1Threshold": 40,
+    "gate2Threshold": 120,
+    "grandFishMinEnergy": 100
+  },
+  "combo": {
+    "windowNormal": 110,
+    "windowStealth": 130,
+    "maxMultiplierStack": 20,
+    "multiplierPerStack": 0.2
+  },
+  "enemy": {
+    "basePatrolSpeed": 1.5,
+    "baseChaseSpeed": 3.6,
+    "dogPatrolSpeed": 2,
+    "dogChaseSpeed": 4.8,
+    "visionRange": 160,
+    "visionAngleDeg": 60,
+    "dogVisionRange": 220,
+    "dogVisionAngleDeg": 72,
+    "alertTime": 70,
+    "chaseLoseTime": 100
+  },
+  "finalChase": {
+    "triggerDelay": 60,
+    "enemyStunFrames": 80,
+    "speedBoost": 0.05,
+    "maxSpeed": 4.2,
+    "regainTrackTimeout": 180
+  },
+  "catnip": {
+    "duration": 300,
+    "chefResistMul": 2
+  },
+  "fat": {
+    "triggerEveryNFood": 10,
+    "maxLevel": 5,
+    "penaltyPerLevel": 0.04
+  },
+  "particles": {
+    "poolDesktop": 200,
+    "poolMobile": 80
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "_comment": "Food type definitions. energy is base value before breed/zone modifiers.",
+  "foods": [
+    {
+      "id": "biscuit",
+      "name_zh": "饼干",
+      "name_en": "Biscuit",
+      "energy": 5,
+      "spawnZones": [
+        1
+      ],
+      "mechanic": "instant",
+      "scoreBase": 50
+    },
+    {
+      "id": "fish",
+      "name_zh": "鱼",
+      "name_en": "Fish",
+      "energy": 30,
+      "spawnZones": [
+        1,
+        2
+      ],
+      "mechanic": "instant",
+      "scoreBase": 300
+    },
+    {
+      "id": "can",
+      "name_zh": "罐头",
+      "name_en": "Can",
+      "energy": 15,
+      "spawnZones": [
+        1,
+        2
+      ],
+      "mechanic": "instant",
+      "scoreBase": 150
+    },
+    {
+      "id": "cheese",
+      "name_zh": "奶酪",
+      "name_en": "Cheese",
+      "energy": 10,
+      "spawnZones": [
+        1,
+        2
+      ],
+      "mechanic": "rolling",
+      "rollSpeed": 2.5,
+      "rollDuration": 90,
+      "rollFriction": 0.97,
+      "scoreBase": 100
+    },
+    {
+      "id": "cake",
+      "name_zh": "蛋糕",
+      "name_en": "Cake",
+      "energy": 50,
+      "spawnZones": [
+        1,
+        2,
+        3
+      ],
+      "mechanic": "timed_eat",
+      "eatDuration": 180,
+      "scoreBase": 500
+    },
+    {
+      "id": "icecream",
+      "name_zh": "冰淇淋",
+      "name_en": "Ice Cream",
+      "energy": 12,
+      "spawnZones": [
+        1,
+        2,
+        3
+      ],
+      "mechanic": "speed_buff",
+      "buffSpeedBonus": 0.4,
+      "buffDuration": 300,
+      "scoreBase": 120
+    },
+    {
+      "id": "grandfish",
+      "name_zh": "大鱼干",
+      "name_en": "Grand Fish",
+      "energy": 1000,
+      "spawnZones": [
+        3
+      ],
+      "mechanic": "victory_objective",
+      "minEnergyToGrab": 100,
+      "position": {
+        "tileX": 25,
+        "tileY": 15
+      },
+      "scoreBase": 5000
+    }
+  ],
+  "bonusFish": {
+    "name_zh": "额外鱼",
+    "name_en": "Bonus Fish",
+    "energy": 25,
+    "spawnCount": 5,
+    "triggerThreshold": 15,
+    "timeLimit": 420
+  },
+  "energyFormula": "Math.round(baseEnergy * breed.energyMod * zoneBreedBonus.energyMod)"
+}

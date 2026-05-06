@@ -1,0 +1,153 @@
+{
+  "_comment": "Cat breed ScriptableObject data. speedMod/sneakMod etc are multipliers applied to base stats.",
+  "breeds": [
+    {
+      "id": "orange",
+      "name_zh": "橘猫",
+      "name_en": "Orange Tabby",
+      "desc_zh": "美食鉴赏家·得分+15%·变胖减速减半",
+      "desc_en": "Gourmet scorer, +15% score, halved fat penalty",
+      "color": "#FF8C00",
+      "icon": "🟠",
+      "speedMod": 1,
+      "sneakMod": 1,
+      "energyMod": 1,
+      "dashCooldownMod": 1,
+      "scoreMod": 1.15,
+      "fatPenaltyMod": 0.5,
+      "bonusLives": 0,
+      "unlockCondition": "free",
+      "zoneBonus": {
+        "1": {
+          "scoreMod": 1.2,
+          "speedMod": 1,
+          "sneakMod": 1,
+          "energyMod": 1
+        },
+        "2": {
+          "scoreMod": 1.1,
+          "speedMod": 1,
+          "sneakMod": 1,
+          "energyMod": 1.05
+        },
+        "3": {
+          "scoreMod": 1.25,
+          "speedMod": 1,
+          "sneakMod": 1,
+          "energyMod": 1
+        }
+      }
+    },
+    {
+      "id": "black",
+      "name_zh": "黑猫",
+      "name_en": "Black Cat",
+      "desc_zh": "潜行大师·隐身时间+25%",
+      "desc_en": "Stealth master, +25% invis",
+      "color": "#333333",
+      "icon": "⚫",
+      "speedMod": 0.95,
+      "sneakMod": 1.25,
+      "energyMod": 1,
+      "dashCooldownMod": 1,
+      "scoreMod": 1,
+      "fatPenaltyMod": 1,
+      "bonusLives": 0,
+      "unlockCondition": "reach_zone2",
+      "zoneBonus": {
+        "1": {
+          "scoreMod": 1,
+          "speedMod": 1,
+          "sneakMod": 1.15,
+          "energyMod": 1
+        },
+        "2": {
+          "scoreMod": 1,
+          "speedMod": 1,
+          "sneakMod": 1.25,
+          "energyMod": 1
+        },
+        "3": {
+          "scoreMod": 1,
+          "speedMod": 1,
+          "sneakMod": 1.35,
+          "energyMod": 1
+        }
+      }
+    },
+    {
+      "id": "white",
+      "name_zh": "白猫",
+      "name_en": "White Cat",
+      "desc_zh": "敏捷猎手·速度+15%冲刺快",
+      "desc_en": "Agile hunter, +15% speed",
+      "color": "#F5F5F5",
+      "icon": "⚪",
+      "speedMod": 1.15,
+      "sneakMod": 0.85,
+      "energyMod": 0.9,
+      "dashCooldownMod": 0.7,
+      "scoreMod": 1,
+      "fatPenaltyMod": 1,
+      "bonusLives": 0,
+      "unlockCondition": "reach_zone3",
+      "zoneBonus": {
+        "1": {
+          "scoreMod": 1,
+          "speedMod": 1.05,
+          "sneakMod": 1,
+          "energyMod": 1
+        },
+        "2": {
+          "scoreMod": 1,
+          "speedMod": 1.15,
+          "sneakMod": 1,
+          "energyMod": 1
+        },
+        "3": {
+          "scoreMod": 1,
+          "speedMod": 1.2,
+          "sneakMod": 1,
+          "energyMod": 1
+        }
+      }
+    },
+    {
+      "id": "siamese",
+      "name_zh": "暹罗猫",
+      "name_en": "Siamese",
+      "desc_zh": "美食家·进食能量+30%",
+      "desc_en": "Gourmet, +30% energy",
+      "color": "#DEB887",
+      "icon": "🔶",
+      "speedMod": 0.9,
+      "sneakMod": 1,
+      "energyMod": 1.3,
+      "dashCooldownMod": 1,
+      "scoreMod": 1,
+      "fatPenaltyMod": 1,
+      "bonusLives": 1,
+      "unlockCondition": "victory",
+      "zoneBonus": {
+        "1": {
+          "scoreMod": 1,
+          "speedMod": 1,
+          "sneakMod": 1,
+          "energyMod": 1.1
+        },
+        "2": {
+          "scoreMod": 1,
+          "speedMod": 1,
+          "sneakMod": 1,
+          "energyMod": 1.2
+        },
+        "3": {
+          "scoreMod": 1,
+          "speedMod": 1,
+          "sneakMod": 1.05,
+          "energyMod": 1.3
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "_comment": "Zone layout and procedural generation parameters. Rows use Y-down coordinate (row 0 = top).",
+  "zones": [
+    {
+      "id": 1,
+      "name_zh": "花园",
+      "name_en": "Garden",
+      "rowStart": 60,
+      "rowEnd": 79,
+      "worldYStart": 2400,
+      "worldYEnd": 3160,
+      "difficulty": "easy",
+      "enemies": [
+        "drone",
+        "chef",
+        "guard",
+        "doglady"
+      ],
+      "foodTypes": [
+        "biscuit",
+        "can",
+        "fish",
+        "cheese"
+      ],
+      "objective": {
+        "id": "silent_feast",
+        "name_zh": "无声盛宴",
+        "name_en": "Silent Feast",
+        "goal_zh": "潜行状态吃完5个食物",
+        "goal_en": "Eat 5 foods while sneaking",
+        "reward": 200
+      },
+      "generation": {
+        "templates": [
+          "2x2_bush_patch",
+          "L_tree_bush",
+          "flower_ring",
+          "tree_pair",
+          "bush_flower_combo"
+        ],
+        "templateCount": [
+          3,
+          5
+        ],
+        "scatteredElements": {
+          "bushes": 8,
+          "trees": 4,
+          "flowers": 6
+        },
+        "stringLights": 8
+      }
+    },
+    {
+      "id": 2,
+      "name_zh": "宴会厅",
+      "name_en": "Banquet Hall",
+      "rowStart": 30,
+      "rowEnd": 59,
+      "worldYStart": 1200,
+      "worldYEnd": 2360,
+      "difficulty": "medium",
+      "enemies": [
+        "chef",
+        "waiter",
+        "dog",
+        "bigdog",
+        "grandma",
+        "doglady"
+      ],
+      "foodTypes": [
+        "biscuit",
+        "can",
+        "fish",
+        "cheese",
+        "cake",
+        "icecream"
+      ],
+      "objective": {
+        "id": "bonus_feast",
+        "name_zh": "额外盛宴",
+        "name_en": "Bonus Feast",
+        "goal_zh": "总吃≥15后触发，420帧内吃完5条额外鱼",
+        "goal_en": "After 15+ foods eaten, eat all 5 bonus fish within 420f",
+        "reward": 400
+      },
+      "generation": {
+        "tableClusters": {
+          "count": [
+            4,
+            8
+          ],
+          "size": "3x2",
+          "minGap": 2,
+          "noCorridor": true
+        },
+        "bushes": 15,
+        "trees": 6,
+        "stringLights": 40
+      }
+    },
+    {
+      "id": 3,
+      "name_zh": "舞台",
+      "name_en": "Stage",
+      "rowStart": 0,
+      "rowEnd": 29,
+      "worldYStart": 0,
+      "worldYEnd": 1160,
+      "difficulty": "hard",
+      "enemies": [
+        "chef",
+        "waiter",
+        "dog",
+        "bigdog",
+        "drone",
+        "guard"
+      ],
+      "foodTypes": [
+        "cake",
+        "icecream",
+        "grandfish"
+      ],
+      "objective": {
+        "id": "distract_guard",
+        "name_zh": "分散守卫",
+        "name_en": "Distract Guard",
+        "goal_zh": "在大鱼附近使用猫薄荷",
+        "goal_en": "Use catnip near grand fish",
+        "reward": 300
+      },
+      "generation": {
+        "stageFloor": {
+          "centerOffset": [
+            5,
+            10
+          ],
+          "radius": [
+            8,
+            14
+          ],
+          "tileType": 8
+        },
+        "tablesOnStage": [
+          2,
+          4
+        ],
+        "grandFishClearance": {
+          "center": [
+            25,
+            15
+          ],
+          "radius": 7
+        },
+        "stringLights": 15
+      }
+    }
+  ],
+  "gates": [
+    {
+      "id": 1,
+      "row": 60,
+      "gapX": [
+        22,
+        27
+      ],
+      "energyRequired": 40,
+      "keyRequired": false,
+      "unlockBreed": "black"
+    },
+    {
+      "id": 2,
+      "row": 30,
+      "gapX": [
+        22,
+        27
+      ],
+      "energyRequired": 120,
+      "keyRequired": true,
+      "keyItem": "can_opener",
+      "unlockBreed": "white"
+    }
+  ],
+  "corridor": {
+    "xMin": 22,
+    "xMax": 27,
+    "alwaysClear": true
+  },
+  "grandmaSpawnThreshold": 0.8
+}

@@ -1,0 +1,267 @@
+{
+  "_comment": "Bilingual UI strings for Unity Localization package. Default language: English.",
+  "zh": {
+    "title": {
+      "gameTitle": "贪吃喵",
+      "gameSub": "GREEDY MEOW",
+      "tagline": "小镇\"社区主子日\"·百宴大劫案",
+      "startGame": "开始游戏",
+      "howToPlay": "玩法说明"
+    },
+    "hud": {
+      "catEnergy": "猫猫能量",
+      "catnip": "猫薄荷",
+      "canOpener": "黄金开罐器 ✓",
+      "dashReady": "冲刺就绪",
+      "dashCool": "冷却中...",
+      "zone1": "花园边缘",
+      "zone2": "主宴会区",
+      "zone3": "中央舞台"
+    },
+    "objectives": {
+      "fishRun": "带着大鱼干跑回花园！",
+      "escProg": "逃跑进度",
+      "runBack": "快跑回花园草丛！",
+      "runSouth": "向南逃跑！",
+      "findFish": "找到大鱼干！",
+      "nearby": "就在附近！",
+      "atCenter": "在舞台中央",
+      "stealKey": "偷走奶奶的黄金开罐器",
+      "stealHint": "趁奶奶不注意时靠近她",
+      "gotoVIP": "前往VIP通道",
+      "energy": "能量",
+      "eatFood": "吃掉花园里的食物",
+      "enterBanquet": "进入主宴会区",
+      "gateOpen": "通道已开启，向北前进",
+      "enterStage": "进入中央舞台",
+      "vipOpen": "VIP通道已开启"
+    },
+    "gates": {
+      "needKey": "需要黄金开罐器🔑",
+      "needEnergy": "需要 {n} 能量",
+      "canPass": "可以通过！",
+      "needMore": "需要更多能量"
+    },
+    "steal": {
+      "stealNow": "靠近即可偷取！",
+      "goToBehind": "绕到她背后...",
+      "sheChasing": "她在追你！先甩开！",
+      "behindOrCatnip": "绕到背后 或 用猫薄荷"
+    },
+    "events": {
+      "gotKey": "拿到黄金开罐器！",
+      "myKey": "我的开罐器！",
+      "banquetUnlock": "宴会区已解锁！",
+      "vipUnlock": "用开罐器打开了VIP通道！",
+      "gotFish": "拿到大鱼干了！快跑！",
+      "ouch": "呜！被砸了！",
+      "fishBone": "鱼骨反击！",
+      "nearMiss": "险！+50",
+      "comboMaster": "连击大师！",
+      "unstoppable": "不可阻挡！",
+      "legendary": "传说级！"
+    },
+    "zones": {
+      "zone1Title": "第一幕·潜入与开胃菜",
+      "zone1Sub": "吃掉猫饼干，积攒能量冲开花园大门！",
+      "zone2Title": "第二幕·混乱升级",
+      "zone2Sub": "警犬出没！找到奶奶的黄金开罐器！",
+      "zone3Title": "第三幕·终极鱼干",
+      "zone3Sub": "在胖厨师眼皮底下叼走金奖大鱼干！"
+    },
+    "enemies": {
+      "grandma": "奶奶",
+      "chef": "厨师",
+      "dog": "警犬",
+      "bigdog": "大狗",
+      "waiter": "服务员",
+      "drone": "无人机",
+      "guard": "保安",
+      "doglady": "遛狗大妈"
+    },
+    "gameover": {
+      "caught": "被抓住了！",
+      "score": "得分",
+      "food": "食物",
+      "foodUnit": "个",
+      "maxCombo": "最高连击",
+      "clickRestart": "点击重新开始"
+    },
+    "victory": {
+      "missionComplete": "任务完成！",
+      "finalScore": "最终得分",
+      "ateFood": "吃掉食物",
+      "rankLabel": "吃货等级"
+    },
+    "ranks": {
+      "rank0": "偷吃小白",
+      "rank1": "潜行新手",
+      "rank2": "偷吃达人",
+      "rank3": "小镇饿霸",
+      "rank4": "美食大盗",
+      "rank5": "百宴终结者"
+    },
+    "controls": {
+      "move": "按住鼠标:移动",
+      "dash": "空格:冲刺闪避",
+      "catnip": "右键:猫薄荷",
+      "sneak": "Shift:潜行",
+      "hide": "E:躲藏",
+      "menu": "ESC:菜单"
+    },
+    "breeds": {
+      "speed": "速度",
+      "stealth": "潜行",
+      "energy": "能量",
+      "dash": "冲刺",
+      "score": "得分",
+      "selectCat": "选择猫咪",
+      "back": "返回",
+      "select": "选择"
+    },
+    "misc": {
+      "hiding": "隐藏中...",
+      "dashText": "冲刺！",
+      "runText": "快跑！",
+      "autoHide": "停下即隐藏",
+      "paused": "已暂停",
+      "resume": "继续游戏",
+      "quit": "退出到主页",
+      "langSwitch": "EN",
+      "fullscreen": "全屏",
+      "rotateDevice": "请横屏游玩"
+    }
+  },
+  "en": {
+    "title": {
+      "gameTitle": "Greedy Meow",
+      "gameSub": "贪吃喵",
+      "tagline": "Community Cat Day · The Grand Banquet Heist",
+      "startGame": "Start Game",
+      "howToPlay": "How to Play"
+    },
+    "hud": {
+      "catEnergy": "Cat Energy",
+      "catnip": "Catnip",
+      "canOpener": "Can Opener ✓",
+      "dashReady": "Dash Ready",
+      "dashCool": "Cooling...",
+      "zone1": "Garden Edge",
+      "zone2": "Banquet Area",
+      "zone3": "Central Stage"
+    },
+    "objectives": {
+      "fishRun": "Run back to the garden with the fish!",
+      "escProg": "Escape",
+      "runBack": "Run to the garden!",
+      "runSouth": "Head south!",
+      "findFish": "Find the Grand Fish!",
+      "nearby": "Nearby!",
+      "atCenter": "At center stage",
+      "stealKey": "Steal Grandma's Can Opener",
+      "stealHint": "Sneak up when she's distracted",
+      "gotoVIP": "Go to VIP Gate",
+      "energy": "Energy",
+      "eatFood": "Eat food in the garden",
+      "enterBanquet": "Enter Banquet Area",
+      "gateOpen": "Gate open! Head north",
+      "enterStage": "Enter Central Stage",
+      "vipOpen": "VIP gate open!"
+    },
+    "gates": {
+      "needKey": "Need Can Opener🔑",
+      "needEnergy": "Need {n} energy",
+      "canPass": "You can pass!",
+      "needMore": "Need more energy"
+    },
+    "steal": {
+      "stealNow": "Get close to steal!",
+      "goToBehind": "Go behind her...",
+      "sheChasing": "She's chasing you! Lose her!",
+      "behindOrCatnip": "Get behind or use catnip"
+    },
+    "events": {
+      "gotKey": "Got the Can Opener!",
+      "myKey": "My can opener!",
+      "banquetUnlock": "Banquet unlocked!",
+      "vipUnlock": "VIP gate opened with Can Opener!",
+      "gotFish": "Got the Grand Fish! RUN!",
+      "ouch": "Ouch! Hit!",
+      "fishBone": "Fish Bone Strike!",
+      "nearMiss": "Close! +50",
+      "comboMaster": "Combo Master!",
+      "unstoppable": "Unstoppable!",
+      "legendary": "LEGENDARY!"
+    },
+    "zones": {
+      "zone1Title": "Act 1 · Appetizer Infiltration",
+      "zone1Sub": "Eat cat biscuits, fill energy to open the garden gate!",
+      "zone2Title": "Act 2 · Chaos Escalation",
+      "zone2Sub": "Dogs patrol! Find Grandma's Golden Can Opener!",
+      "zone3Title": "Act 3 · The Grand Fish",
+      "zone3Sub": "Snatch the Grand Fish under the chef's nose!"
+    },
+    "enemies": {
+      "grandma": "Grandma",
+      "chef": "Chef",
+      "dog": "Police Dog",
+      "bigdog": "Big Dog",
+      "waiter": "Waiter",
+      "drone": "Drone",
+      "guard": "Guard",
+      "doglady": "Dog Lady"
+    },
+    "gameover": {
+      "caught": "Caught!",
+      "score": "Score",
+      "food": "Food",
+      "foodUnit": "",
+      "maxCombo": "Max Combo",
+      "clickRestart": "Click to restart"
+    },
+    "victory": {
+      "missionComplete": "Mission Complete!",
+      "finalScore": "Final Score",
+      "ateFood": "Food Eaten",
+      "rankLabel": "Rank"
+    },
+    "ranks": {
+      "rank0": "Novice Nibbler",
+      "rank1": "Sneaky Starter",
+      "rank2": "Food Thief",
+      "rank3": "Town Glutton",
+      "rank4": "Master Burglar",
+      "rank5": "Banquet Annihilator"
+    },
+    "controls": {
+      "move": "Hold mouse: Move",
+      "dash": "Space: Dash",
+      "catnip": "Right-click: Catnip",
+      "sneak": "Shift: Sneak",
+      "hide": "E: Hide",
+      "menu": "ESC: Menu"
+    },
+    "breeds": {
+      "speed": "Speed",
+      "stealth": "Stealth",
+      "energy": "Energy",
+      "dash": "Dash",
+      "score": "Score",
+      "selectCat": "Select Cat",
+      "back": "Back",
+      "select": "Select"
+    },
+    "misc": {
+      "hiding": "Hiding...",
+      "dashText": "DASH!",
+      "runText": "RUN!",
+      "autoHide": "Stop to hide",
+      "paused": "Paused",
+      "resume": "Resume",
+      "quit": "Quit to Menu",
+      "langSwitch": "中文",
+      "fullscreen": "Fullscreen",
+      "rotateDevice": "Please rotate to landscape"
+    }
+  }
+}

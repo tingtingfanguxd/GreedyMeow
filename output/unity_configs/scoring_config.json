@@ -1,0 +1,102 @@
+{
+  "_comment": "Scoring system configuration. Formula: baseValue * 10 * comboMultiplier * breed.scoreMod * zoneBonus.scoreMod",
+  "formula": "Math.floor(baseValue * 10 * comboMul * breedScoreMod * zoneScoreMod)",
+  "comboMultiplier": {
+    "formula": "1 + Math.min(combo, 20) * 0.2",
+    "maxMultiplier": 5
+  },
+  "events": [
+    {
+      "event": "food_eaten",
+      "baseFormula": "foodEnergy * 10 * comboMul"
+    },
+    {
+      "event": "combo_10",
+      "bonus": 1500
+    },
+    {
+      "event": "combo_20",
+      "bonus": 3000
+    },
+    {
+      "event": "combo_30",
+      "bonus": 5000
+    },
+    {
+      "event": "can_opener_steal",
+      "bonus": 300
+    },
+    {
+      "event": "grand_fish_grab",
+      "bonus": 500
+    },
+    {
+      "event": "near_miss_dash",
+      "bonus": 50
+    },
+    {
+      "event": "life_pickup",
+      "bonus": 50
+    },
+    {
+      "event": "buff_pickup",
+      "bonus": 25
+    },
+    {
+      "event": "zone1_objective",
+      "bonus": 200
+    },
+    {
+      "event": "zone2_objective",
+      "bonus": 400
+    },
+    {
+      "event": "zone3_objective",
+      "bonus": 300
+    }
+  ],
+  "rankings": [
+    {
+      "id": "rank0",
+      "name_zh": "偷吃小白",
+      "name_en": "Novice Nibbler",
+      "minScore": 0,
+      "color": "#FFFFFF"
+    },
+    {
+      "id": "rank1",
+      "name_zh": "潜行新手",
+      "name_en": "Sneaky Starter",
+      "minScore": 1500,
+      "color": "#00FF00"
+    },
+    {
+      "id": "rank2",
+      "name_zh": "偷吃达人",
+      "name_en": "Food Thief",
+      "minScore": 3000,
+      "color": "#FFD700"
+    },
+    {
+      "id": "rank3",
+      "name_zh": "小镇饿霸",
+      "name_en": "Town Glutton",
+      "minScore": 5000,
+      "color": "#FF8C00"
+    },
+    {
+      "id": "rank4",
+      "name_zh": "美食大盗",
+      "name_en": "Master Burglar",
+      "minScore": 7000,
+      "color": "#FF0000"
+    },
+    {
+      "id": "rank5",
+      "name_zh": "百宴终结者",
+      "name_en": "Banquet Annihilator",
+      "minScore": 10000,
+      "color": "#00FFFF"
+    }
+  ]
+}

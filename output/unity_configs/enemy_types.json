@@ -1,0 +1,284 @@
+{
+  "_comment": "Enemy type ScriptableObjects. lethal=true means direct catch costs a life. Non-lethal enemies broadcast alerts.",
+  "enemies": [
+    {
+      "id": "grandma",
+      "name_zh": "奶奶",
+      "name_en": "Grandma",
+      "lethal": true,
+      "patrolSpeed": 1.2,
+      "chaseSpeed": 2.6,
+      "visionRange": 140,
+      "visionAngleRad": 1.122,
+      "visionAngleDesc": "π/2.8",
+      "alertDuration": 100,
+      "chasePersist": 90,
+      "alertRadius": 0,
+      "spawnZones": [
+        2
+      ],
+      "abilities": [
+        "carries_can_opener",
+        "zigzag_chase",
+        "catnip_vulnerable"
+      ],
+      "quotes_zh": [
+        "臭猫！别动！",
+        "嗯？那是什么？",
+        "算了..."
+      ],
+      "quotes_en": [
+        "Stop, cat!",
+        "Huh? What's that?",
+        "Never mind..."
+      ]
+    },
+    {
+      "id": "chef",
+      "name_zh": "厨师",
+      "name_en": "Chef",
+      "lethal": true,
+      "patrolSpeed": 1.6,
+      "chaseSpeed": 3.2,
+      "visionRange": 170,
+      "visionAngleRad": 0.898,
+      "visionAngleDesc": "π/3.5",
+      "alertDuration": 50,
+      "chasePersist": 180,
+      "alertRadius": 0,
+      "spawnZones": [
+        1,
+        2,
+        3
+      ],
+      "abilities": [
+        "smell_detect_1.5x",
+        "catnip_resist_2x",
+        "fast_reaction"
+      ],
+      "quotes_zh": [
+        "站住！偷吃贼！",
+        "谁在那里！",
+        "跑哪去了..."
+      ],
+      "quotes_en": [
+        "Stop! Thief!",
+        "Who's there!",
+        "Where'd it go..."
+      ]
+    },
+    {
+      "id": "waiter",
+      "name_zh": "侍者",
+      "name_en": "Waiter",
+      "lethal": true,
+      "patrolSpeed": 2.2,
+      "chaseSpeed": 3,
+      "visionRange": 120,
+      "visionAngleRad": 0.628,
+      "visionAngleDesc": "π/5",
+      "alertDuration": 40,
+      "chasePersist": 100,
+      "alertRadius": 0,
+      "spawnZones": [
+        2,
+        3
+      ],
+      "abilities": [
+        "fast_patrol",
+        "narrow_vision"
+      ],
+      "quotes_zh": [
+        "站住！",
+        "抓到你了！",
+        "走了..."
+      ],
+      "quotes_en": [
+        "Stop!",
+        "Got you!",
+        "Gone..."
+      ]
+    },
+    {
+      "id": "guard",
+      "name_zh": "保安",
+      "name_en": "Guard",
+      "lethal": true,
+      "patrolSpeed": 0,
+      "chaseSpeed": 3.5,
+      "visionRange": 100,
+      "visionAngleRad": 1.571,
+      "visionAngleDesc": "π/2",
+      "alertDuration": 60,
+      "chasePersist": 200,
+      "alertRadius": 0,
+      "spawnZones": [
+        1,
+        3
+      ],
+      "abilities": [
+        "sleeps_initially",
+        "wakes_on_ripple",
+        "stationary"
+      ],
+      "quotes_zh": [
+        "嗯？！",
+        "别跑！",
+        "zzz..."
+      ],
+      "quotes_en": [
+        "Huh?!",
+        "Stop!",
+        "zzz..."
+      ]
+    },
+    {
+      "id": "dog",
+      "name_zh": "小狗",
+      "name_en": "Dog",
+      "lethal": false,
+      "patrolSpeed": 1.8,
+      "chaseSpeed": 3.8,
+      "visionRange": 200,
+      "visionAngleRad": 1.427,
+      "visionAngleDesc": "π/2.2",
+      "alertDuration": 30,
+      "chasePersist": 220,
+      "alertRadius": 250,
+      "spawnZones": [
+        2,
+        3
+      ],
+      "abilities": [
+        "bark_alert",
+        "burst_speed",
+        "smell_detect_1.5x",
+        "catnip_vulnerable"
+      ],
+      "quotes_zh": [
+        "汪汪汪！",
+        "汪？",
+        "呜..."
+      ],
+      "quotes_en": [
+        "Woof woof!",
+        "Woof?",
+        "Whine..."
+      ]
+    },
+    {
+      "id": "bigdog",
+      "name_zh": "大狗",
+      "name_en": "Big Dog",
+      "lethal": false,
+      "patrolSpeed": 1,
+      "chaseSpeed": 2,
+      "visionRange": 182,
+      "visionAngleRad": 1.461,
+      "visionAngleDesc": "π/2.15",
+      "alertDuration": 20,
+      "chasePersist": 120,
+      "alertRadius": 350,
+      "spawnZones": [
+        2,
+        3
+      ],
+      "abilities": [
+        "loud_bark_350range",
+        "catnip_vulnerable"
+      ],
+      "quotes_zh": [
+        "汪！！！",
+        "嗅嗅...",
+        "哼..."
+      ],
+      "quotes_en": [
+        "WOOF!!!",
+        "Sniff...",
+        "Hmph..."
+      ]
+    },
+    {
+      "id": "drone",
+      "name_zh": "无人机",
+      "name_en": "Drone",
+      "lethal": false,
+      "patrolSpeed": 1.4,
+      "chaseSpeed": 2.8,
+      "visionRange": 160,
+      "visionAngleRad": 6.283,
+      "visionAngleDesc": "360°",
+      "alertDuration": 10,
+      "chasePersist": 160,
+      "alertRadius": 300,
+      "spawnZones": [
+        1,
+        2,
+        3
+      ],
+      "abilities": [
+        "airborne",
+        "full_360_vision",
+        "electronic_alarm",
+        "ignores_bush"
+      ],
+      "quotes_zh": [
+        "嗡嗡嗡~",
+        "检测到入侵",
+        "扫描中..."
+      ],
+      "quotes_en": [
+        "Bzzzz~",
+        "Intruder detected",
+        "Scanning..."
+      ]
+    },
+    {
+      "id": "doglady",
+      "name_zh": "遛狗大妈",
+      "name_en": "Dog Lady",
+      "lethal": false,
+      "patrolSpeed": 0.8,
+      "chaseSpeed": 1.5,
+      "visionRange": 100,
+      "visionAngleRad": 1.047,
+      "visionAngleDesc": "π/3",
+      "alertDuration": 80,
+      "chasePersist": 150,
+      "alertRadius": 200,
+      "spawnZones": [
+        1,
+        2
+      ],
+      "abilities": [
+        "orbits_dog_radius80",
+        "dog_triggers_alarm",
+        "catnip_vulnerable"
+      ],
+      "quotes_zh": [
+        "乖乖！那是什么？",
+        "汪汪去追！",
+        "回来~"
+      ],
+      "quotes_en": [
+        "Good boy! What's that?",
+        "Go get it!",
+        "Come back~"
+      ]
+    }
+  ],
+  "zoneScaling": {
+    "1": {
+      "speedMul": 0.9,
+      "visionMul": 0.85
+    },
+    "2": {
+      "speedMul": 1,
+      "visionMul": 1
+    },
+    "3": {
+      "speedMul": 1.15,
+      "visionMul": 1.1
+    }
+  }
+}

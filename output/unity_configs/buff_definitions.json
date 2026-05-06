@@ -1,0 +1,39 @@
+{
+  "_comment": "Buff pickup ScriptableObjects. respawnTime is in frames (60fps).",
+  "buffs": [
+    {
+      "id": "invisibility",
+      "name_zh": "隐身",
+      "name_en": "Invisibility",
+      "duration": 200,
+      "durationScaledBy": "breed.sneakMod",
+      "effect": "enemies_cannot_see_or_catch",
+      "respawnTime": 900
+    },
+    {
+      "id": "speed",
+      "name_zh": "加速",
+      "name_en": "Speed Boost",
+      "duration": 200,
+      "durationScaledBy": null,
+      "effect": "movement_speed_+40%",
+      "speedBonus": 0.4,
+      "respawnTime": 900
+    },
+    {
+      "id": "shield",
+      "name_zh": "护盾",
+      "name_en": "Shield",
+      "duration": -1,
+      "durationScaledBy": null,
+      "effect": "absorb_1_lethal_hit_+45f_invuln",
+      "invulnFrames": 45,
+      "respawnTime": 900
+    }
+  ],
+  "lives": {
+    "starting": 3,
+    "max": 5,
+    "siameseBonus": 1
+  }
+}
