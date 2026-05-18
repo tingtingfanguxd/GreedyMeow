@@ -121,6 +121,8 @@ const LEVEL_CONFIGS = [
   },
 ];
 let currentLevel = LEVEL_CONFIGS[0];
+// Procedural generation toggles — disabled when using editor levels
+let PROC_GEN = { tiles: true, food: true, enemies: true };
 
 // Get the zone number (1-3) from world position
 function getPlayerZone() {
@@ -1037,6 +1039,23 @@ let LEVEL_JSON = JSON.parse('{"r":{"3":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
 function loadLevelFromJSON() {
   if (!LEVEL_JSON) return false;
+  // Support unified format (version 2.0) - convert to compact internally
+  if (LEVEL_JSON.version && LEVEL_JSON.map) {
+    const unified = LEVEL_JSON;
+    if (unified.settings) {
+      PROC_GEN.tiles = !!unified.settings.proceduralTiles;
+      PROC_GEN.food = !!unified.settings.proceduralFood;
+      PROC_GEN.enemies = !!unified.settings.proceduralEnemies;
+    }
+    LEVEL_JSON = {
+      r: unified.map.tiles,
+      e: unified.entities.map(e => {
+        const obj = { t: e.type, x: e.tileX, y: e.tileY };
+        if (e.patrol && e.patrol.length > 0) obj.p = e.patrol.map(p => [p.x, p.y]);
+        return obj;
+      })
+    };
+  }
   // Load tiles - sparse rows (only non-zero stored)
   for (let y = 0; y < CFG.MAP_H; y++) {
     map[y] = LEVEL_JSON.r[y] ? [...LEVEL_JSON.r[y]] : new Array(CFG.MAP_W).fill(0);
@@ -7837,9 +7856,14 @@ function resetGame() {
   catnipEffects.length = 0;
   gates[0].open = false;
   gates[1].open = false;
-  generateMap();
-  spawnFood();
-  spawnEnemies();
+  if (LEVEL_JSON) {
+    loadLevelFromJSON();
+    if (PROC_GEN.tiles) generateMap();
+  } else {
+    generateMap();
+    if (PROC_GEN.food) spawnFood();
+    if (PROC_GEN.enemies) spawnEnemies();
+  }
 }
 
 function drawDecorEntities() {
@@ -8659,20 +8683,119 @@ if ('serviceWorker' in navigator) {
 // Start
 requestAnimationFrame(gameLoop);
 
+// ===== EXPORT GAME STATE (for bidirectional sync) =====
+function exportGameState() {
+  // Build sparse tile map from current map[]
+  const tileRows = {};
+  for (let y = 0; y < CFG.MAP_H; y++) {
+    if (map[y] && map[y].some(t => t !== 0)) tileRows[String(y)] = [...map[y]];
+  }
+
+  // Collect all entities back to editor format
+  const entityList = [];
+
+  // Foods
+  for (const f of foods) {
+    entityList.push({ type: f.type, tileX: Math.round(f.x / CFG.TILE), tileY: Math.round(f.y / CFG.TILE), energy: f.value });
+  }
+
+  // Grand fish
+  if (grandFish) {
+    entityList.push({ type: 'grandfish', tileX: Math.round(grandFish.x / CFG.TILE), tileY: Math.round(grandFish.y / CFG.TILE), special: 'boss_item' });
+  }
+
+  // Enemies
+  const ENEMY_REVERSE = { chef:'chef', waiter:'waiter', dog:'smalldog', bigdog:'bigdog', drone:'drone', guard:'guard', doglady:'doglady', grandma:'grandma' };
+  for (const e of enemies) {
+    const entry = {
+      type: ENEMY_REVERSE[e.type] || e.type,
+      tileX: Math.round(e.x / CFG.TILE),
+      tileY: Math.round(e.y / CFG.TILE),
+      isEnemy: true
+    };
+    if (e.patrolPath && e.patrolPath.length > 0) {
+      entry.patrol = e.patrolPath.map(p => ({ x: p.x, y: p.y }));
+    }
+    entityList.push(entry);
+  }
+
+  // Hide spots
+  for (const h of hideSpots) {
+    entityList.push({ type: 'box', tileX: Math.round(h.x / CFG.TILE), tileY: Math.round(h.y / CFG.TILE), special: 'hide' });
+  }
+
+  // Interactive items
+  for (const s of springs) entityList.push({ type: 'spring', tileX: Math.round(s.x / CFG.TILE), tileY: Math.round(s.y / CFG.TILE), special: 'bounce' });
+  for (const r of revdoors) entityList.push({ type: 'revdoor', tileX: Math.round(r.x / CFG.TILE), tileY: Math.round(r.y / CFG.TILE), special: 'block_enemy' });
+  for (const b of bananas) entityList.push({ type: 'banana', tileX: Math.round(b.x / CFG.TILE), tileY: Math.round(b.y / CFG.TILE), special: 'slip' });
+  for (const f of fishboneItems) entityList.push({ type: 'fishbone', tileX: Math.round(f.x / CFG.TILE), tileY: Math.round(f.y / CFG.TILE), special: 'lure' });
+  for (const c of catnipPickups) entityList.push({ type: 'catnip', tileX: Math.round(c.x / CFG.TILE), tileY: Math.round(c.y / CFG.TILE), special: 'confuse' });
+  for (const d of decorEntities) entityList.push({ type: d.type, tileX: Math.round(d.x / CFG.TILE), tileY: Math.round(d.y / CFG.TILE) });
+
+  return {
+    version: "2.0",
+    meta: { name: "Exported from Game", author: "Game Runtime", modified: new Date().toISOString() },
+    map: { width: CFG.MAP_W, height: CFG.MAP_H, tileSize: CFG.TILE, tiles: tileRows },
+    entities: entityList,
+    zones: {
+      "1": { rowStart: 60, rowEnd: 79, name_zh: "花园", name_en: "Garden" },
+      "2": { rowStart: 30, rowEnd: 59, name_zh: "宴会厅", name_en: "Banquet Hall" },
+      "3": { rowStart: 0, rowEnd: 29, name_zh: "舞台", name_en: "Stage" }
+    },
+    gates: [
+      { id: 1, row: 60, gapX: [22, 27], energy: 40, keyRequired: false },
+      { id: 2, row: 30, gapX: [22, 27], energy: 120, keyRequired: true, keyItem: "can_opener" }
+    ],
+    settings: { proceduralTiles: PROC_GEN.tiles, proceduralFood: PROC_GEN.food, proceduralEnemies: PROC_GEN.enemies }
+  };
+}
+
+// Export compact format (backward compat)
+function exportCompactState() {
+  const state = exportGameState();
+  return JSON.stringify({
+    r: state.map.tiles,
+    e: state.entities.map(e => {
+      const obj = { t: e.type, x: e.tileX, y: e.tileY };
+      if (e.patrol && e.patrol.length > 0) obj.p = e.patrol.map(p => [p.x, p.y]);
+      return obj;
+    })
+  });
+}
+
 // ===== CROSS-FRAME COMMUNICATION (for launcher preview) =====
 window.addEventListener('message', function(evt) {
-  if (evt.data && evt.data.type === 'LOAD_LEVEL_COMPACT') {
+  if (!evt.data) return;
+  if (evt.data.type === 'LOAD_LEVEL_COMPACT') {
     try {
-      LEVEL_JSON = JSON.parse(evt.data.json);
-      // Reset game to title with new level
+      LEVEL_JSON = typeof evt.data.json === 'string' ? JSON.parse(evt.data.json) : evt.data.json;
       gameState = 'title';
       frame = 0;
-      // Reload level data
       loadLevelFromJSON();
-      generateMap(); // re-run procedural fill for empty areas
+      if (PROC_GEN.tiles) generateMap();
       console.log('[GreedyMeow] Live level loaded from editor');
     } catch(e) {
       console.error('[GreedyMeow] Failed to load level:', e);
+    }
+  }
+  if (evt.data.type === 'LOAD_LEVEL_UNIFIED') {
+    try {
+      LEVEL_JSON = typeof evt.data.json === 'string' ? JSON.parse(evt.data.json) : evt.data.json;
+      gameState = 'title';
+      frame = 0;
+      loadLevelFromJSON();
+      if (PROC_GEN.tiles) generateMap();
+      console.log('[GreedyMeow] Unified level loaded');
+    } catch(e) {
+      console.error('[GreedyMeow] Failed to load unified level:', e);
+    }
+  }
+  if (evt.data.type === 'REQUEST_GAME_STATE') {
+    try {
+      const state = exportGameState();
+      window.parent.postMessage({ type: 'GAME_STATE', json: JSON.stringify(state) }, '*');
+    } catch(e) {
+      console.error('[GreedyMeow] Failed to export state:', e);
     }
   }
 });

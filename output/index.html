@@ -20,10 +20,15 @@ html, body { width:100%; height:100%; overflow:hidden; background:#0a0a1a; font-
 .tab-btn.active { background:#e94560; color:#fff; border-color:#e94560; }
 .sync-btn {
   background:#2a6e2a; border:1px solid #4a4; color:#fff; padding:6px 14px; border-radius:4px;
-  cursor:pointer; font-size:12px; font-weight:bold; margin-left:auto; transition:all 0.2s;
+  cursor:pointer; font-size:12px; font-weight:bold; transition:all 0.2s;
 }
 .sync-btn:hover { background:#3a8e3a; }
 .sync-btn.flash { background:#ffd700; color:#000; }
+.sync-btn.reverse { background:#1a5a8a; border-color:#4a8ac4; margin-left:0; }
+.sync-btn.reverse:hover { background:#2a7aba; }
+.sync-btn.export-ver { background:#8a5a1a; border-color:#c4944a; margin-left:0; }
+.sync-btn.export-ver:hover { background:#aa7a3a; }
+.spacer { margin-left:auto; }
 .status { color:#666; font-size:11px; margin-left:8px; }
 #frameWrap { width:100%; height:calc(100% - 42px); position:relative; }
 #frameWrap iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:none; }
@@ -35,7 +40,10 @@ iframe.hidden { display:none; }
   <span class="title">GREEDY MEOW</span>
   <button class="tab-btn active" onclick="switchTab('editor')" id="tabEditor">Editor</button>
   <button class="tab-btn" onclick="switchTab('game')" id="tabGame">Game</button>
-  <button class="sync-btn" onclick="syncToGame()" id="syncBtn">Sync to Game</button>
+  <span class="spacer"></span>
+  <button class="sync-btn" onclick="syncToGame()" id="syncBtn" title="Editor → Game">▶ Sync to Game</button>
+  <button class="sync-btn reverse" onclick="syncFromGame()" id="syncBackBtn" title="Game → Editor">◀ Sync to Editor</button>
+  <button class="sync-btn export-ver" onclick="exportVersion()" title="Export playable version">💾 Export Version</button>
   <span class="status" id="statusText">Ready</span>
 </div>
 <div id="frameWrap">
@@ -54,34 +62,113 @@ function switchTab(tab) {
   document.getElementById('tabGame').classList.toggle('active', tab === 'game');
 }
 
+// ===== Editor → Game =====
 function syncToGame() {
   const btn = document.getElementById('syncBtn');
   const status = document.getElementById('statusText');
   btn.classList.add('flash');
-  status.textContent = 'Syncing...';
+  status.textContent = 'Syncing to Game...';
   setTimeout(() => btn.classList.remove('flash'), 400);
 
   try {
     const editorWin = document.getElementById('editorFrame').contentWindow;
     const gameWin = document.getElementById('gameFrame').contentWindow;
 
-    const compact = editorWin.exportCompactJSON();
-    if (!compact) { status.textContent = 'Error: editor returned empty data'; return; }
+    // Try unified format first, fall back to compact
+    let levelData;
+    if (typeof editorWin.exportUnifiedJSON === 'function') {
+      const unified = editorWin.exportUnifiedJSON();
+      if (!unified) { status.textContent = 'Error: editor returned empty'; return; }
+      levelData = JSON.parse(unified);
+    } else {
+      const compact = editorWin.exportCompactJSON();
+      if (!compact) { status.textContent = 'Error: editor returned empty'; return; }
+      levelData = JSON.parse(compact);
+    }
 
-    gameWin.LEVEL_JSON = JSON.parse(compact);
+    gameWin.LEVEL_JSON = levelData;
     gameWin.gameState = 'title';
     gameWin.frame = 0;
     gameWin.loadLevelFromJSON();
-    gameWin.generateMap();
+    // Only run proc gen for tiles if toggle is on
+    if (gameWin.PROC_GEN && gameWin.PROC_GEN.tiles) {
+      gameWin.generateMap();
+    }
 
-    status.textContent = 'Synced! Game tab ready to play.';
+    status.textContent = 'Synced! Game ready.';
     setTimeout(() => { status.textContent = 'Ready'; }, 3000);
-
     switchTab('game');
-    console.log('[Launcher] Level synced successfully');
+    console.log('[Launcher] Level synced to game (unified format)');
   } catch (e) {
     status.textContent = 'Sync failed: ' + e.message;
     console.error('[Launcher] Sync error:', e);
+  }
+}
+
+// ===== Game → Editor (bidirectional) =====
+function syncFromGame() {
+  const btn = document.getElementById('syncBackBtn');
+  const status = document.getElementById('statusText');
+  btn.classList.add('flash');
+  status.textContent = 'Syncing from Game...';
+  setTimeout(() => btn.classList.remove('flash'), 400);
+
+  try {
+    const editorWin = document.getElementById('editorFrame').contentWindow;
+    const gameWin = document.getElementById('gameFrame').contentWindow;
+
+    if (typeof gameWin.exportGameState !== 'function') {
+      status.textContent = 'Error: Game does not support state export';
+      return;
+    }
+
+    const state = gameWin.exportGameState();
+    const stateJSON = JSON.stringify(state);
+
+    if (typeof editorWin.importUnifiedJSON === 'function') {
+      editorWin.importUnifiedJSON(stateJSON);
+    } else {
+      // Fallback: post message
+      editorWin.postMessage({ type: 'LOAD_LEVEL', json: stateJSON }, '*');
+    }
+
+    status.textContent = 'Game state imported to Editor!';
+    setTimeout(() => { status.textContent = 'Ready'; }, 3000);
+    switchTab('editor');
+    console.log('[Launcher] Game state synced to editor');
+  } catch (e) {
+    status.textContent = 'Sync failed: ' + e.message;
+    console.error('[Launcher] Sync error:', e);
+  }
+}
+
+// ===== Export Playable Version =====
+function exportVersion() {
+  const status = document.getElementById('statusText');
+  status.textContent = 'Exporting...';
+
+  try {
+    const editorWin = document.getElementById('editorFrame').contentWindow;
+    let json;
+    if (typeof editorWin.exportUnifiedJSON === 'function') {
+      json = editorWin.exportUnifiedJSON();
+    } else {
+      json = editorWin.exportCompactJSON();
+    }
+
+    // Create downloadable file
+    const blob = new Blob([json], { type: 'application/json' });
+    const a = document.createElement('a');
+    const name = 'GreedyMeow_Level_' + new Date().toISOString().slice(0,10);
+    a.href = URL.createObjectURL(blob);
+    a.download = name + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+
+    status.textContent = 'Exported: ' + name + '.json';
+    setTimeout(() => { status.textContent = 'Ready'; }, 3000);
+  } catch (e) {
+    status.textContent = 'Export failed: ' + e.message;
   }
 }
 </script>

@@ -93,9 +93,17 @@ body { font-family: 'Segoe UI', sans-serif; background:#1a1a2e; color:#e0e0e0; d
       <option value="3">Zone 3 舞台 (0-29)</option>
     </select>
     <span>|</span>
+    <input type="text" id="levelName" value="Mansion Heist" placeholder="Level Name" style="background:#1a1a2e;border:1px solid #333;color:#ffd700;padding:3px 6px;font-size:11px;width:120px;border-radius:3px">
+    <span>|</span>
     <button onclick="runValidation()" style="background:#2a6e2a;font-weight:bold">✅ 验证 Validate</button>
+    <button onclick="displaySimResults(runSimulation(5))" style="background:#2a4e6e;font-weight:bold">🤖 AI模拟×5</button>
     <button onclick="toggleHeatmap()">🗺 热力图</button>
     <span id="cellInfo"></span>
+  </div>
+  <div style="display:flex;gap:4px;align-items:center;padding:2px 10px;background:#0f3460;border-bottom:1px solid #333">
+    <label style="color:#aaa;font-size:10px;cursor:pointer"><input type="checkbox" id="procTiles" checked> 程序化地块</label>
+    <label style="color:#aaa;font-size:10px;cursor:pointer"><input type="checkbox" id="procFood" checked> 程序化食物</label>
+    <label style="color:#aaa;font-size:10px;cursor:pointer"><input type="checkbox" id="procEnemies" checked> 程序化敌人</label>
   </div>
   <div id="canvasWrap">
     <canvas id="grid"></canvas>
@@ -122,6 +130,7 @@ body { font-family: 'Segoe UI', sans-serif; background:#1a1a2e; color:#e0e0e0; d
     <div>
       <button onclick="copyModal()">📋 复制</button>
       <button onclick="loadModal()">📥 加载</button>
+      <button onclick="downloadJSON()">💾 下载.json</button>
       <button onclick="closeModal()">关闭</button>
     </div>
   </div>
@@ -668,9 +677,11 @@ function clearAll() {
 
 // ===== EXPORT / IMPORT =====
 function exportJSON() {
-  const data = { version: 1, mapW: MAP_W, mapH: MAP_H, tiles, entities };
-  document.getElementById('modalTitle').textContent = '📤 导出 Export JSON';
-  document.getElementById('modalText').value = JSON.stringify(data, null, 2);
+  openExportModal();
+}
+function openExportModal() {
+  document.getElementById('modalTitle').textContent = 'Export Level (Unified JSON)';
+  document.getElementById('modalText').value = exportUnifiedJSON();
   document.getElementById('modalBg').classList.add('show');
 }
 function importJSON() {
@@ -684,15 +695,33 @@ function copyModal() {
 }
 function loadModal() {
   try {
-    const data = JSON.parse(document.getElementById('modalText').value);
-    if (data.tiles && data.entities) {
+    const text = document.getElementById('modalText').value.trim();
+    const data = JSON.parse(text);
+    // Try unified format first
+    if (data.version && data.map) {
+      importUnifiedJSON(text);
+    } else if (data.r && data.e) {
+      importCompactJSON(text);
+    } else if (data.tiles && data.entities) {
       saveUndo();
       tiles = data.tiles;
       entities = data.entities;
-      closeModal();
       render();
+    } else {
+      alert('Unrecognized JSON format');
     }
+    closeModal();
   } catch(e) { alert('JSON解析错误: ' + e.message); }
+}
+function downloadJSON() {
+  const text = document.getElementById('modalText').value;
+  const name = document.getElementById('levelName')?.value || 'level';
+  const blob = new Blob([text], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name.replace(/\s+/g, '_') + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 function closeModal() { document.getElementById('modalBg').classList.remove('show'); }
 
@@ -726,23 +755,153 @@ function exportCompactJSON() {
   return JSON.stringify({ r, e: elist });
 }
 
+// ===== UNIFIED JSON EXPORT (Editor <-> Game <-> Unity) =====
+function exportUnifiedJSON() {
+  // Sparse tile rows (same as compact but in unified wrapper)
+  const tileRows = {};
+  for (let y = 0; y < MAP_H; y++) {
+    const row = tiles[y];
+    if (row && row.some(t => t !== 0)) tileRows[String(y)] = [...row];
+  }
+
+  // Full entity list with all properties
+  const entityList = entities.map(ent => {
+    const def = findDef(ent.type);
+    const obj = { type: ent.type, tileX: ent.x, tileY: ent.y };
+    if (ent.patrol && ent.patrol.length > 0) {
+      obj.patrol = ent.patrol.map(p => ({ x: p.x, y: p.y }));
+    }
+    // Carry element definition props for Unity
+    if (def) {
+      if (def.energy !== undefined) obj.energy = def.energy;
+      if (def.enemy) obj.isEnemy = true;
+      if (def.special) obj.special = def.special;
+      if (def.speed !== undefined) obj.speed = def.speed;
+      if (def.vision !== undefined) obj.vision = def.vision;
+      if (def.visionAngle !== undefined) obj.visionAngle = def.visionAngle;
+      if (def.smell !== undefined) obj.smell = def.smell;
+    }
+    return obj;
+  });
+
+  const level = {
+    version: "2.0",
+    meta: {
+      name: document.getElementById('levelName')?.value || "Untitled Level",
+      author: "Editor",
+      created: new Date().toISOString(),
+      modified: new Date().toISOString()
+    },
+    map: {
+      width: MAP_W, height: MAP_H, tileSize: 40,
+      tiles: tileRows
+    },
+    entities: entityList,
+    zones: {
+      "1": { rowStart: 60, rowEnd: 79, name_zh: "\u82b1\u56ed", name_en: "Garden" },
+      "2": { rowStart: 30, rowEnd: 59, name_zh: "\u5bb4\u4f1a\u5385", name_en: "Banquet Hall" },
+      "3": { rowStart: 0, rowEnd: 29, name_zh: "\u821e\u53f0", name_en: "Stage" }
+    },
+    gates: [
+      { id: 1, row: 60, gapX: [22, 27], energy: 40, keyRequired: false },
+      { id: 2, row: 30, gapX: [22, 27], energy: 120, keyRequired: true, keyItem: "can_opener" }
+    ],
+    settings: {
+      proceduralTiles: document.getElementById('procTiles')?.checked ?? false,
+      proceduralFood: document.getElementById('procFood')?.checked ?? false,
+      proceduralEnemies: document.getElementById('procEnemies')?.checked ?? false
+    }
+  };
+  return JSON.stringify(level, null, 2);
+}
+
+// Import unified JSON format
+function importUnifiedJSON(jsonStr) {
+  try {
+    const data = JSON.parse(jsonStr);
+    if (!data.version || !data.map || !data.entities) {
+      // Try legacy compact format
+      if (data.r && data.e) return importCompactJSON(jsonStr);
+      throw new Error('Unrecognized format');
+    }
+    saveUndo();
+    // Load tiles
+    for (let y = 0; y < MAP_H; y++) {
+      tiles[y] = data.map.tiles[String(y)] ? [...data.map.tiles[String(y)]] : new Array(MAP_W).fill(0);
+    }
+    // Load entities
+    entities = data.entities.map((e, i) => ({
+      id: i, type: e.type, x: e.tileX, y: e.tileY,
+      patrol: (e.patrol || []).map(p => ({ x: p.x, y: p.y }))
+    }));
+    // Update proc gen toggles if present
+    if (data.settings) {
+      const pt = document.getElementById('procTiles');
+      const pf = document.getElementById('procFood');
+      const pe = document.getElementById('procEnemies');
+      if (pt) pt.checked = !!data.settings.proceduralTiles;
+      if (pf) pf.checked = !!data.settings.proceduralFood;
+      if (pe) pe.checked = !!data.settings.proceduralEnemies;
+    }
+    // Update level name
+    if (data.meta?.name) {
+      const nameEl = document.getElementById('levelName');
+      if (nameEl) nameEl.value = data.meta.name;
+    }
+    render();
+    return true;
+  } catch(e) { alert('JSON\u89e3\u6790\u9519\u8bef: ' + e.message); return false; }
+}
+
+// Import legacy compact format
+function importCompactJSON(jsonStr) {
+  try {
+    const data = JSON.parse(jsonStr);
+    if (!data.r || !data.e) throw new Error('Not compact format');
+    saveUndo();
+    for (let y = 0; y < MAP_H; y++) {
+      tiles[y] = data.r[String(y)] ? [...data.r[String(y)]] : new Array(MAP_W).fill(0);
+    }
+    entities = data.e.map((e, i) => ({
+      id: i, type: e.t, x: e.x, y: e.y,
+      patrol: (e.p || []).map(p => ({ x: p[0], y: p[1] }))
+    }));
+    render();
+    return true;
+  } catch(e) { alert('Legacy JSON error: ' + e.message); return false; }
+}
+
+// Export for backward compat with game (still uses compact internally)
+function exportCompactFromUnified() {
+  const unified = JSON.parse(exportUnifiedJSON());
+  return JSON.stringify({
+    r: unified.map.tiles,
+    e: unified.entities.map(e => {
+      const obj = { t: e.type, x: e.tileX, y: e.tileY };
+      if (e.patrol && e.patrol.length > 0) obj.p = e.patrol.map(p => [p.x, p.y]);
+      return obj;
+    })
+  });
+}
+
 // ===== CROSS-FRAME COMMUNICATION =====
-// When embedded in launcher, post level data to parent on export
 window.addEventListener('message', function(evt) {
-  if (evt.data && evt.data.type === 'REQUEST_LEVEL') {
-    const compact = exportCompactJSON();
+  if (!evt.data) return;
+  // Editor -> Game request
+  if (evt.data.type === 'REQUEST_LEVEL') {
+    const compact = exportCompactFromUnified();
     window.parent.postMessage({ type: 'LEVEL_DATA', json: compact }, '*');
   }
-  if (evt.data && evt.data.type === 'LOAD_LEVEL') {
-    try {
-      const data = JSON.parse(evt.data.json);
-      if (data.tiles && data.entities) {
-        saveUndo();
-        tiles = data.tiles;
-        entities = data.entities;
-        render();
-      }
-    } catch(e) {}
+  if (evt.data.type === 'REQUEST_LEVEL_UNIFIED') {
+    window.parent.postMessage({ type: 'LEVEL_DATA_UNIFIED', json: exportUnifiedJSON() }, '*');
+  }
+  // Game -> Editor (bidirectional sync)
+  if (evt.data.type === 'LOAD_LEVEL') {
+    const json = typeof evt.data.json === 'string' ? evt.data.json : JSON.stringify(evt.data.json);
+    importUnifiedJSON(json) || importCompactJSON(json);
+  }
+  if (evt.data.type === 'LOAD_LEVEL_COMPACT') {
+    importCompactJSON(typeof evt.data.json === 'string' ? evt.data.json : JSON.stringify(evt.data.json));
   }
 });
 
@@ -946,6 +1105,83 @@ function runValidation() {
   document.getElementById('propContent').innerHTML = html;
   showHeatmap = true;
   render();
+}
+
+// ===== AI SIMULATION ENGINE =====
+function runSimulation(runs) {
+  runs = runs || 5;
+  var simResults = [];
+  for (var run = 0; run < runs; run++) {
+    var sim = { frames:0, maxFrames:60*60*15, energy:0, energyMax:200, lives:3, score:0, combo:0, maxCombo:0, foodEaten:0, deaths:[], deathZones:[0,0,0], phase:'zone1', hasKey:false, hasFish:false, path:[], energyCurve:[], completed:false, completionFrame:0 };
+    var walkable = [];
+    for (var y=0;y<MAP_H;y++){walkable[y]=[];for(var x=0;x<MAP_W;x++){walkable[y][x]=new Set([0,1,4,5,7,8]).has(tiles[y]?.[x]??0);}}
+    function simFindPath(sx,sy,tx,ty){if(!walkable[sy]?.[sx]||!walkable[ty]?.[tx])return null;var visited=new Map(),queue=[[sx,sy]];visited.set(sx+','+sy,null);while(queue.length>0){var c=queue.shift(),cx=c[0],cy=c[1];if(cx===tx&&cy===ty){var path=[],key=tx+','+ty;while(key){var parts=key.split(',');path.unshift({x:+parts[0],y:+parts[1]});key=visited.get(key);}return path;}for(var d of[[0,1],[0,-1],[1,0],[-1,0]]){var nx=cx+d[0],ny=cy+d[1],nk=nx+','+ny;if(nx>=0&&nx<MAP_W&&ny>=0&&ny<MAP_H&&walkable[ny][nx]&&!visited.has(nk)){visited.set(nk,cx+','+cy);queue.push([nx,ny]);}}}return null;}
+    var foodByZone={1:[],2:[],3:[]},enemyPositions=[],grandmaPos=null,grandFishPos=null;
+    for(var e of entities){var zone=e.y>=60?1:e.y>=30?2:3;var def=findDef(e.type);if(def?.energy>0)foodByZone[zone].push({x:e.x,y:e.y,energy:def.energy,type:e.type,eaten:false});if(e.type==='grandfish')grandFishPos={x:e.x,y:e.y};if(def?.enemy)enemyPositions.push({x:e.x,y:e.y,type:e.type,vision:def.vision||0,speed:def.speed||0});if(e.type==='grandma')grandmaPos={x:e.x,y:e.y};}
+    if(!grandFishPos)grandFishPos={x:25,y:15};
+    var px=24,py=78,stuckCounter=0;
+    while(sim.frames<sim.maxFrames&&sim.lives>0){
+      sim.frames++;var curZone=py>=60?1:py>=30?2:3;
+      if(sim.frames%60===0)sim.energyCurve.push({frame:sim.frames,energy:sim.energy,zone:curZone});
+      var targetPos=null;
+      if(sim.phase==='zone1'){var avail=foodByZone[1].filter(function(f){return!f.eaten;});if(avail.length>0&&sim.energy<40){avail.sort(function(a,b){return Math.hypot(a.x-px,a.y-py)-Math.hypot(b.x-px,b.y-py);});targetPos=avail[0];}else{sim.phase='gate1';targetPos={x:24,y:60};}}
+      else if(sim.phase==='gate1'){targetPos={x:24,y:59};if(py<=60&&sim.energy>=40)sim.phase='zone2';}
+      else if(sim.phase==='zone2'){if(!sim.hasKey&&grandmaPos){if(sim.energy>=80)targetPos=grandmaPos;else{var avail2=foodByZone[2].filter(function(f){return!f.eaten;});if(avail2.length>0){avail2.sort(function(a,b){return Math.hypot(a.x-px,a.y-py)-Math.hypot(b.x-px,b.y-py);});targetPos=avail2[0];}else targetPos=grandmaPos;}}else if(sim.energy>=120&&sim.hasKey){sim.phase='gate2';targetPos={x:24,y:30};}else{var avail3=foodByZone[2].filter(function(f){return!f.eaten;});if(avail3.length>0){avail3.sort(function(a,b){return Math.hypot(a.x-px,a.y-py)-Math.hypot(b.x-px,b.y-py);});targetPos=avail3[0];}}}
+      else if(sim.phase==='gate2'){targetPos={x:24,y:29};if(py<=30&&sim.energy>=120&&sim.hasKey)sim.phase='zone3';}
+      else if(sim.phase==='zone3'){if(sim.energy>=100)targetPos=grandFishPos;else{var avail4=foodByZone[3].filter(function(f){return!f.eaten;});if(avail4.length>0){avail4.sort(function(a,b){return Math.hypot(a.x-px,a.y-py)-Math.hypot(b.x-px,b.y-py);});targetPos=avail4[0];}else targetPos=grandFishPos;}}
+      else if(sim.phase==='fish'){targetPos=grandFishPos;if(Math.abs(px-grandFishPos.x)<=1&&Math.abs(py-grandFishPos.y)<=1){sim.hasFish=true;sim.phase='escape';}}
+      else if(sim.phase==='escape'){targetPos={x:24,y:77};if(py>=76){sim.completed=true;sim.completionFrame=sim.frames;break;}}
+      if(targetPos){var path=simFindPath(px,py,targetPos.x,targetPos.y);if(path&&path.length>1){px=path[1].x;py=path[1].y;stuckCounter=0;}else{stuckCounter++;if(stuckCounter>120){if(sim.phase==='zone1')sim.phase='gate1';else if(sim.phase==='zone2'){sim.hasKey=true;sim.phase='gate2';}else if(sim.phase==='zone3')sim.phase='fish';stuckCounter=0;}}}
+      for(var zf of Object.values(foodByZone))for(var f of zf){if(!f.eaten&&f.x===px&&f.y===py){f.eaten=true;sim.energy=Math.min(sim.energyMax,sim.energy+f.energy);sim.foodEaten++;sim.combo++;sim.maxCombo=Math.max(sim.maxCombo,sim.combo);sim.score+=f.energy*10*(1+Math.min(sim.combo,20)*0.2);}}
+      if(!sim.hasKey&&grandmaPos&&Math.abs(px-grandmaPos.x)<=1&&Math.abs(py-grandmaPos.y)<=1){sim.hasKey=true;sim.score+=300;}
+      if(sim.phase==='zone3'&&sim.energy>=100&&!sim.hasFish&&Math.abs(px-grandFishPos.x)<=1&&Math.abs(py-grandFishPos.y)<=1){sim.hasFish=true;sim.phase='escape';sim.score+=500;}
+      for(var en of enemyPositions){var dist=Math.hypot(en.x-px,en.y-py);var isLethal=!['smalldog','bigdog','drone','doglady'].includes(en.type);if(dist<4&&isLethal&&Math.random()<0.015){sim.lives--;sim.deaths.push({x:px,y:py,frame:sim.frames,enemy:en.type});var dz=py>=60?0:py>=30?1:2;sim.deathZones[dz]++;sim.combo=0;if(sim.lives<=0)break;}}
+      if(sim.frames%110===0)sim.combo=0;
+    }
+    simResults.push(sim);
+  }
+  var completed=simResults.filter(function(s){return s.completed;});
+  var passRate=completed.length/runs;
+  var avgTime=completed.length>0?completed.reduce(function(s,r){return s+r.completionFrame;},0)/completed.length/60:0;
+  var avgScore=simResults.reduce(function(s,r){return s+r.score;},0)/runs;
+  var avgDeaths=simResults.reduce(function(s,r){return s+r.deaths.length;},0)/runs;
+  var deathHotspots={};
+  for(var s of simResults)for(var d of s.deaths){var key=Math.floor(d.x/5)*5+','+Math.floor(d.y/5)*5;deathHotspots[key]=(deathHotspots[key]||0)+1;}
+  var maxLen=Math.max.apply(null,simResults.map(function(s){return s.energyCurve.length;}));
+  var avgEnergyCurve=[];
+  for(var i=0;i<maxLen;i++){var vals=simResults.filter(function(s){return s.energyCurve[i];}).map(function(s){return s.energyCurve[i];});if(vals.length>0)avgEnergyCurve.push({frame:vals[0].frame,energy:Math.round(vals.reduce(function(s,v){return s+v.energy;},0)/vals.length)});}
+  return {runs:runs,passRate:passRate,avgTimeSeconds:Math.round(avgTime),avgScore:Math.round(avgScore),avgDeaths:Math.round(avgDeaths*10)/10,deathZones:[Math.round(simResults.reduce(function(s,r){return s+r.deathZones[0];},0)/runs*10)/10,Math.round(simResults.reduce(function(s,r){return s+r.deathZones[1];},0)/runs*10)/10,Math.round(simResults.reduce(function(s,r){return s+r.deathZones[2];},0)/runs*10)/10],deathHotspots:deathHotspots,avgEnergyCurve:avgEnergyCurve,perRun:simResults.map(function(s){return{completed:s.completed,frames:s.completionFrame||s.frames,score:Math.round(s.score),deaths:s.deaths.length,foodEaten:s.foodEaten,maxCombo:s.maxCombo};})};
+}
+
+function displaySimResults(results) {
+  var panel = document.getElementById('validationResults') || document.getElementById('propContent');
+  var passColor = results.passRate >= 0.8 ? '#4caf50' : results.passRate >= 0.4 ? '#ff9800' : '#f44336';
+  var html = '<div style="padding:8px;font-size:12px;line-height:1.6">';
+  html += '<h3 style="color:#ffd700;margin:0 0 8px">\ud83e\udd16 AI\u6a21\u62df\u7ed3\u679c (' + results.runs + '\u6b21)</h3>';
+  html += '<div style="background:'+passColor+';color:#fff;padding:6px 10px;border-radius:4px;font-size:16px;font-weight:bold;margin-bottom:8px">';
+  html += '\u901a\u5173\u7387: ' + Math.round(results.passRate * 100) + '%</div>';
+  html += '<table style="width:100%;font-size:11px;border-collapse:collapse">';
+  html += '<tr><td style="padding:3px;color:#aaa">\u5e73\u5747\u65f6\u95f4</td><td style="color:#fff">' + results.avgTimeSeconds + 's (' + Math.round(results.avgTimeSeconds/60) + 'min)</td></tr>';
+  html += '<tr><td style="padding:3px;color:#aaa">\u5e73\u5747\u5206\u6570</td><td style="color:#ffd700">' + results.avgScore + '</td></tr>';
+  html += '<tr><td style="padding:3px;color:#aaa">\u5e73\u5747\u6b7b\u4ea1</td><td style="color:#f44336">' + results.avgDeaths + '</td></tr>';
+  html += '<tr><td style="padding:3px;color:#aaa">\u6b7b\u4ea1\u5206\u5e03</td><td style="color:#ff9800">Z1:' + results.deathZones[0] + ' Z2:' + results.deathZones[1] + ' Z3:' + results.deathZones[2] + '</td></tr>';
+  html += '</table>';
+  if (results.avgEnergyCurve.length > 0) {
+    html += '<div style="margin-top:8px"><span style="color:#aaa;font-size:11px">\u80fd\u91cf\u66f2\u7ebf:</span><br>';
+    var maxE=200,w=200,h=40;
+    html += '<svg width="'+w+'" height="'+h+'" style="background:#111;border-radius:4px">';
+    html += '<line x1="0" y1="'+(h-40/maxE*h)+'" x2="'+w+'" y2="'+(h-40/maxE*h)+'" stroke="#444" stroke-dasharray="2"/>';
+    html += '<line x1="0" y1="'+(h-120/maxE*h)+'" x2="'+w+'" y2="'+(h-120/maxE*h)+'" stroke="#444" stroke-dasharray="2"/>';
+    var pts=results.avgEnergyCurve.map(function(p,i){return i/(results.avgEnergyCurve.length-1)*w+','+(h-p.energy/maxE*h);}).join(' ');
+    html += '<polyline points="'+pts+'" fill="none" stroke="#4fc3f7" stroke-width="1.5"/>';
+    html += '<text x="2" y="'+(h-40/maxE*h-2)+'" fill="#666" font-size="8">G1:40</text>';
+    html += '<text x="2" y="'+(h-120/maxE*h-2)+'" fill="#666" font-size="8">G2:120</text>';
+    html += '</svg></div>';
+  }
+  html += '<div style="margin-top:8px;font-size:10px;color:#666">';
+  for (var i=0;i<results.perRun.length;i++){var r=results.perRun[i];var icon=r.completed?'\u2705':'\ud83d\udc80';html+='<div>'+icon+' Run'+(i+1)+': '+Math.round(r.frames/60)+'s | '+r.score+'pts | '+r.deaths+'\u6b7b | '+r.foodEaten+'\u98df | combo'+r.maxCombo+'</div>';}
+  html += '</div></div>';
+  panel.innerHTML = html;
 }
 
 function toggleHeatmap() {
